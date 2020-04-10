@@ -18,13 +18,24 @@
     "url": "https://github.com/orion-labs/node-orion/issues"
   },
   "homepage": "https://github.com/orion-labs/node-orion#readme",
-  "dependencies": {},
+  "dependencies": {
+    "fs-extra": "^9.0.0",
+    "swagger-client": "latest",
+    "yarn": "^1.22.4"
+  },
   "devDependencies": {
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
     "eslint": "latest",
     "eslint-config-prettier": "latest",
     "eslint-plugin-prettier": "latest",
+    "grunt": "^1.1.0",
+    "grunt-contrib-jshint": "^2.1.0",
+    "grunt-contrib-nodeunit": "latest",
+    "grunt-contrib-uglify": "latest",
+    "grunt-jsdoc": "^2.4.1",
+    "grunt-jsdoc-to-markdown": "^5.0.0",
+    "grunt-jsonlint": "^2.1.2",
     "husky": "latest",
     "jest": "latest",
     "lint-staged": "latest",
