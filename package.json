@@ -2,7 +2,7 @@
   "name": "@orionlabs/node-orion",
   "version": "1.0.0",
   "description": "Node.js Library for Orion Labs communications platform.",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "dev": "jest --coverage --watch",
     "lint": "eslint --cache .",
@@ -19,6 +19,8 @@
   },
   "homepage": "https://github.com/orion-labs/node-orion#readme",
   "dependencies": {
+    "@orionlabs/node-orion": "./",
+    "babel": "^6.23.0",
     "fs-extra": "^9.0.0",
     "swagger-client": "latest",
     "yarn": "^1.22.4"
@@ -26,7 +28,7 @@
   "devDependencies": {
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
-    "eslint": "latest",
+    "eslint": "^6.8.0",
     "eslint-config-prettier": "latest",
     "eslint-plugin-prettier": "latest",
     "grunt": "^1.1.0",
@@ -39,6 +41,8 @@
     "husky": "latest",
     "jest": "latest",
     "lint-staged": "latest",
-    "prettier": "latest"
+    "prettier": "latest",
+    "swagmock": "latest",
+    "xmlhttprequest": "latest"
   }
 }
