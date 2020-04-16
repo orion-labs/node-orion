@@ -1,12 +1,19 @@
 language: node_js
+
 node_js:
-  - "8"
-  - "10"
-  - "12"
+  - 'lts/*'
+
+before_install:
+  - curl -o- -L https://yarnpkg.com/install.sh | bash
+  - export PATH="$HOME/.yarn/bin:$PATH"
+
+install: yarn install-no-ts-build
+
 cache:
-  npm
-before_script:
-  - npx envinfo
+  yarn: true
+  directories:
+    - '.eslintcache'
+    - 'node_modules'
+
 script:
-  - npm install
-  - npm test
+  - yarn run test-ci-partial
