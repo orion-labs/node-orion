@@ -34,12 +34,11 @@ const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
  * @returns {Promise<Object>}
  */
 exports.lyre = (token, groups, message = '', media = '', target = '') => {
-  const LYRE_URL = 'https://lyre.api.orionaster.com/lyre';
-  const lyreURL = process.env.LYRE_URL || LYRE_URL;
+  const url = process.env.LYRE_URL || 'https://lyre.api.orionaster.com/lyre';
   return new Promise((resolve, reject) => {
     axios({
       method: 'POST',
-      url: lyreURL,
+      url: url,
       data: {
         token: token,
         group_ids: groups,
@@ -48,7 +47,6 @@ exports.lyre = (token, groups, message = '', media = '', target = '') => {
         target: target,
       },
     }).then(({ status, data }) => {
-      console.log(`status=${status}`);
       if (status === 200) {
         resolve(data);
       } else {
