@@ -1,7 +1,7 @@
 'use strict';
 
 const axios = require('axios');
-const OrionClient = require('@orionlabs/node-orion');
+const OrionClient = require('./../src/main');
 
 jest.mock('axios');
 

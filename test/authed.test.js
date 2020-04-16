@@ -18,21 +18,3 @@ describe('auth', () => {
     });
   });
 });
-
-describe('lookup', () => {
-  it('Lookup user & Group info', () => {
-    const username = process.env.TEST_ORION_USERNAME;
-    const password = process.env.TEST_ORION_PASSWORD;
-    const groups = process.env.TEST_ORION_GROUPS;
-
-    OrionClient.auth(username, password).then((resolve) => {
-      const token = resolve.token;
-      const msg = { group: groups[0] };
-
-      OrionClient.lookup(token, msg).then((resolve) => {
-        expect(resolve).toBeDefined();
-        console.log(resolve);
-      });
-    });
-  });
-});
