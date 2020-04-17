@@ -43,7 +43,9 @@ const auth = (username, password) => {
         client.apis.auth
           .login({ body: authParams })
           .then((response) => resolve(response.body))
-          .catch((error) => reject(error));
+          .catch((response) => {
+            reject(response.response.body);
+          });
       })
       .catch((error) => reject(error));
   });
@@ -150,15 +152,15 @@ const engage = (token, groups, verbosity = 'active') => {
         destinations: [{ destination: 'EventStream', verbosity: verbosity }],
       },
     })
-      .then(({ status, data }) => {
-        if (status === 200) {
-          resolve(data);
+      .then((response) => {
+        if (response.status === 200) {
+          resolve(response.data);
         } else {
-          reject(new Error('error'));
+          reject(new Error(response));
         }
       })
-      .catch((reason) => {
-        reject(reason);
+      .catch((response) => {
+        reject(response.response.data);
       });
   });
 };
@@ -303,13 +305,15 @@ const getGroup = (token, groupId) => {
       method: 'GET',
       url: `https://api.orionlabs.io/api/groups/${groupId}`,
       headers: { Authorization: token },
-    }).then((response) => {
-      if (response.status === 200) {
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          resolve(response.data);
+        } else {
+          reject(response.data);
+        }
+      })
+      .catch((response) => reject(response.response.data));
   });
 };
 exports.getGroup = getGroup;

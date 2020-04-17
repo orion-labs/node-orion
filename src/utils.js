@@ -26,11 +26,11 @@ const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 
 /**
  * Transmits to an Orion Group.
- * @param token {String} Orion Auth Token.
- * @param groups {Array} List of Orion Groups to transmit to.
- * @param message {String} Optional. Message to speak (using TTS).
- * @param media {String} Optional. URL to Orion Audio file to transmit.
- * @param target {String} Optional. Direct message/target specified user id.
+ * @param token {String} Orion Auth Token
+ * @param groups {Array} List of Orion Groups to transmit to
+ * @param message {String} Optional. Message to speak (using TTS)
+ * @param media {String} Optional. URL to Orion Audio file to transmit
+ * @param target {String} Optional. Direct message/target specified User Id
  * @returns {Promise<Object>}
  */
 exports.lyre = (token, groups, message = '', media = '', target = '') => {
@@ -46,11 +46,11 @@ exports.lyre = (token, groups, message = '', media = '', target = '') => {
         media: media || null,
         target: target,
       },
-    }).then(({ status, data }) => {
-      if (status === 200) {
-        resolve(data);
+    }).then((response) => {
+      if (response.status === 200) {
+        resolve(response.data);
       } else {
-        reject(new Error('error'));
+        reject(response);
       }
     });
   });

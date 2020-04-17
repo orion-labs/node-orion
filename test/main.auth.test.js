@@ -35,6 +35,13 @@ describe('auth', () => {
       expect(userId).toBeDefined();
     });
   });
+
+  it('Should fail to login', () => {
+    return OrionClient.auth('bad-username', 'bad-password').catch((error) => {
+      expect(error).toBeInstanceOf(Object);
+      expect(error.id).toEqual(401);
+    });
+  });
 });
 
 describe('whoami', () => {
@@ -105,6 +112,26 @@ describe('engage', () => {
         expect(resolve).toBeInstanceOf(Object);
         expect(resolve.configuration.mediabase).toBeDefined();
         expect(resolve.streamURL).toContain(groups);
+      });
+    });
+  });
+
+  it('Should not Engage with an Orion Group', () => {
+    const username = process.env.TEST_ORION_USERNAME;
+    const password = process.env.TEST_ORION_PASSWORD;
+
+    return OrionClient.auth(username, password).then((resolve) => {
+      expect(resolve).toBeDefined();
+
+      const token = resolve.token;
+      const userId = resolve.id;
+
+      expect(token).toBeDefined();
+      expect(userId).toBeDefined();
+
+      return OrionClient.engage(token, 'bad-group').catch((error) => {
+        expect(error).toBeInstanceOf(Object);
+        expect(error.id).toEqual(404);
       });
     });
   });
@@ -198,6 +225,25 @@ describe('getGroup', () => {
         expect(resolve).toBeInstanceOf(Object);
         expect(resolve.id).toBeDefined();
         expect(resolve.members).toBeInstanceOf(Object);
+      });
+    });
+  });
+
+  it('Should not get Group Profile', () => {
+    const username = process.env.TEST_ORION_USERNAME;
+    const password = process.env.TEST_ORION_PASSWORD;
+
+    return OrionClient.auth(username, password).then((resolve) => {
+      expect(resolve).toBeInstanceOf(Object);
+      expect(resolve).toBeDefined();
+
+      const token = resolve.token;
+
+      expect(token).toBeDefined();
+
+      return OrionClient.getGroup(token, 'bad-group').catch((response) => {
+        expect(response).toBeInstanceOf(Object);
+        expect(response.id).toEqual(404);
       });
     });
   });
