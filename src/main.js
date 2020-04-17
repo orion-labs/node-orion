@@ -101,19 +101,34 @@ const updateUserStatus = (token, userstatus) => {
       url: `https://api.orionlabs.io/api/users/${userstatus.id}/status`,
       headers: { Authorization: token },
       data: userstatus,
-    }).then((response) => {
-      if (response.status === 204) {
-        resolve(response.data);
-      } else {
-        const errorMsg = `status=${response.status} ` + `statusText=${response.statusText}`;
-        reject(new Error(errorMsg));
-      }
-    });
+    })
+      .then((response) => {
+        if (response.status === 204) {
+          resolve(response.data);
+        } else {
+          const errorMsg = `status=${response.status} ` + `statusText=${response.statusText}`;
+          reject(new Error(errorMsg));
+        }
+      })
+      .catch((reason) => {
+        reject(reason);
+      });
   });
 };
 exports.updateUserStatus = updateUserStatus;
 
+/**
+ * Engages ("subscribes") to Orion Group Event Streams.
+ * @param token {String} Orion Authentication Token
+ * @param groups {String|Array} List of groups to engage with.
+ * @param verbosity {String} Stream verbosity level.
+ * @returns {Promise<Object>} Group(s) Configuration.
+ */
 const engage = (token, groups, verbosity = 'active') => {
+  if (typeof groups === 'string') {
+    groups = groups.split(',');
+  }
+
   return new Promise((resolve, reject) => {
     axios({
       method: 'POST',
@@ -124,13 +139,17 @@ const engage = (token, groups, verbosity = 'active') => {
         groupIds: groups,
         destinations: [{ destination: 'EventStream', verbosity: verbosity }],
       },
-    }).then(({ status, data }) => {
-      if (status === 200) {
-        resolve(data);
-      } else {
-        reject(new Error('error'));
-      }
-    });
+    })
+      .then(({ status, data }) => {
+        if (status === 200) {
+          resolve(data);
+        } else {
+          reject(new Error('error'));
+        }
+      })
+      .catch((reason) => {
+        reject(reason);
+      });
   });
 };
 exports.engage = engage;
@@ -209,7 +228,7 @@ const getUserStatus = (token, userId) => {
       headers: { Authorization: token },
     }).then((response) => {
       if (response.status === 200) {
-        resolve(response);
+        resolve(response.data);
       } else {
         reject(response);
       }

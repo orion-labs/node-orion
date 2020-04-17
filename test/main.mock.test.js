@@ -13,7 +13,7 @@ describe('logout', () => {
 
     axios.mockResolvedValue({ status: mockStatus, data: mockData });
 
-    OrionClient.logout(mockSessionId).then((resolve) => {
+    return OrionClient.logout(mockSessionId).then((resolve) => {
       expect(resolve).toBeDefined();
       expect(resolve).toEqual(mockData);
     });
@@ -73,7 +73,7 @@ describe('whoami', () => {
 
     axios.mockResolvedValue({ status: mockStatus, data: mockData });
 
-    OrionClient.whoami(mockToken).then((resolve) => {
+    return OrionClient.whoami(mockToken).then((resolve) => {
       expect(resolve).toBeDefined();
       expect(resolve).toEqual(mockData);
     });
@@ -92,7 +92,7 @@ describe('updateUserStatus', () => {
 
     axios.mockResolvedValue({ status: mockStatus, data: mockData });
 
-    OrionClient.updateUserStatus(mockToken, mockData).then((resolve) => {
+    return OrionClient.updateUserStatus(mockToken, mockData).then((resolve) => {
       expect(resolve).toBeDefined();
       expect(resolve).toEqual(mockData);
     });
@@ -130,7 +130,7 @@ describe('engage', () => {
 
     axios.mockResolvedValue(data);
 
-    OrionClient.engage('123', ['1']).then((response) => {
+    return OrionClient.engage('123', ['1']).then((response) => {
       expect(response).toBeDefined();
       expect(response).toEqual(data.data);
     });

@@ -24,7 +24,8 @@
     "fs-extra": "^9.0.0",
     "swagger-client": "latest",
     "yarn": "^1.22.4",
-    "axios": "latest"
+    "axios": "latest",
+    "ws": "latest"
   },
   "devDependencies": {
     "@commitlint/cli": "latest",
