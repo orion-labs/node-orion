@@ -1,4 +1,6 @@
 /**
+ * Orion Node.js Module. Functions for connecting to the Orion Platform.
+ *
  * Copyright Orion Labs, Inc. https://www.orionlabs.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * @module @orionlabs/node-orion
  **/
 
 'use strict';
@@ -27,9 +31,9 @@ exports.utils = utils;
  * Authenticates against the Orion Platform, and retrieves an Authentication
  * Token. Every token has a pre-determined TTL and is associated with a
  * sessionId, which can be used to logout using the logout() call.
- * @param username {string} Username for Orion.
- * @param password {string} Password for Orion.
- * @returns {Promise<unknown>} Resolves to {id: str, token: str}
+ * @param username {string} Username for Orion
+ * @param password {string} Password for Orion
+ * @returns {Promise<Object>} Resolves to {id: str, token: str}
  */
 const auth = (username, password) => {
   return new Promise((resolve, reject) => {
@@ -51,8 +55,8 @@ exports.login = auth;
  * Logout of a given Orion Session.
  * Orion issues authentication Tokens of a specific TTL upon successful
  * login. To invalidate these tokens a user can call the logout endpoint.
- * @param sessionId {string} ID of the Orion Session to logout from.
- * @returns {Promise<unknown>} Resolves or Rejects successful logout.
+ * @param sessionId {string} ID of the Orion Session to logout from
+ * @returns {Promise<Object>} Resolves or Rejects successful logout
  */
 const logout = (sessionId) => {
   return new Promise((resolve, reject) => {
@@ -73,8 +77,8 @@ exports.logout = logout;
 
 /**
  * Gets the current Orion User's Profile information.
- * @param token {string} Orion Auth Token.
- * @returns {Promise<object>} Resolves to the User's Profile as an Object.
+ * @param token {String} Orion Auth Token
+ * @returns {Promise<Object>} Resolves to the User's Profile as an Object
  */
 const whoami = (token) => {
   return new Promise((resolve, reject) => {
@@ -94,6 +98,12 @@ const whoami = (token) => {
 };
 exports.whoami = whoami;
 
+/**
+ * Updates a User's Status.
+ * @param token {String} Authentication Token
+ * @param userstatus {Object} User Status Object to update with
+ * @returns {Promise<Object>} Updated User Status
+ */
 const updateUserStatus = (token, userstatus) => {
   return new Promise((resolve, reject) => {
     axios({
@@ -154,6 +164,11 @@ const engage = (token, groups, verbosity = 'active') => {
 };
 exports.engage = engage;
 
+/**
+ * Gets all Groups for the current user (as determined by the token).
+ * @param token {String} Orion Authentication Token.
+ * @returns {Promise<Object>} User's Groups
+ */
 const getAllUserGroups = (token) => {
   return whoami(token).then((resolve) => {
     const userId = resolve.id;
@@ -174,6 +189,11 @@ const getAllUserGroups = (token) => {
 };
 exports.getAllUserGroups = getAllUserGroups;
 
+/**
+ * Connects to the Orion Event Stream Websocket
+ * @param token {String} Orion Authentication Token
+ * @returns {Promise<ws>} Websocket session
+ */
 const connectToWebsocket = (token) => {
   const wsURL = 'wss://alnilam.orionlabs.io/stream/wss';
 
@@ -203,6 +223,11 @@ const connectToWebsocket = (token) => {
 };
 exports.connectToWebsocket = connectToWebsocket;
 
+/**
+ * Respond to an Orion Event Stream keepalive 'Ping'
+ * @param token {String} Orion Authentication Token
+ * @returns {Promise<Object>} Updated Stream Configuration
+ */
 const pong = (token) => {
   return new Promise((resolve, reject) => {
     axios({
@@ -220,6 +245,12 @@ const pong = (token) => {
 };
 exports.pong = pong;
 
+/**
+ * Gets User Status for the given User Id
+ * @param token {String} Orion Authentication Token
+ * @param userId {String} Orion User Id
+ * @returns {Promise<Object>} Orion User Profile
+ */
 const getUserStatus = (token, userId) => {
   return new Promise((resolve, reject) => {
     axios({
@@ -237,6 +268,12 @@ const getUserStatus = (token, userId) => {
 };
 exports.getUserStatus = getUserStatus;
 
+/**
+ * Gets User Profile for the given User Id
+ * @param token {String} Orion Authentication Token
+ * @param userId {String} Orion User Id
+ * @returns {Promise<Object>} User Profile
+ */
 const getUser = (token, userId) => {
   return new Promise((resolve, reject) => {
     axios({
@@ -245,7 +282,7 @@ const getUser = (token, userId) => {
       headers: { Authorization: token },
     }).then((response) => {
       if (response.status === 200) {
-        resolve(response);
+        resolve(response.data);
       } else {
         reject(response);
       }
@@ -254,6 +291,12 @@ const getUser = (token, userId) => {
 };
 exports.getUser = getUser;
 
+/**
+ * Gets Group Profile for the given Group Id
+ * @param token {String} Orion Authentication Token
+ * @param groupId {String} Orion Group Id
+ * @returns {Promise<Object>} Orion Group Profile
+ */
 const getGroup = (token, groupId) => {
   return new Promise((resolve, reject) => {
     axios({
@@ -262,7 +305,7 @@ const getGroup = (token, groupId) => {
       headers: { Authorization: token },
     }).then((response) => {
       if (response.status === 200) {
-        resolve(response);
+        resolve(response.data);
       } else {
         reject(response);
       }
