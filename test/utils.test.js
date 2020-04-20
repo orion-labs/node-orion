@@ -62,3 +62,33 @@ describe('ov2wav', () => {
     });
   });
 });
+
+/*
+
+Need media to be generated:
+describe('translate', () => {
+  it('Should translate English to Spanish URL', () => {
+    const event = {
+      media: 'https://alnitak-rx.orionlabs.io/b9577f6f-668f-423b-bb9a-11d1ace77f42.ov',
+      ts: 1587406431.588,
+      id: '81a84c52ff91497aa6182d09e66d50f8',
+      sender: '2a6d61f9023342c8855423ba36128a19',
+      event_type: 'ptt',
+      sender_token_hash: '388b20153a4c47b386120fc3e05c88bc',
+      ptt_seqnum: '1587406432.056607',
+      sender_name: 'G2347',
+      ptt_id: 'fc6c96a1e09e4aeda45cc6e5babac1fe',
+      eventId: 'fc6c96a1e09e4aeda45cc6e5babac1fe',
+      input_lang: 'en-US',
+      output_lang: 'es-MX',
+    };
+
+    return OrionClient.utils.translate(event).then((resolve) => {
+      expect(resolve).toBeDefined();
+      expect(resolve.translation).toBeDefined();
+      expect(resolve.translation.translated_media).toBeDefined();
+      expect(resolve.translation.translated_text).toBeDefined();
+    });
+  });
+});
+*/

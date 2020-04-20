@@ -79,27 +79,6 @@ exports.ov2wav = (event) => {
         reject(response);
       }
     });
-
-    /*
-    let xhr = new XMLHttpRequest();
-
-    xhr.open('POST', url, true);
-
-    xhr.setRequestHeader('Content-Type', 'application/json');
-
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        const response = JSON.parse(xhr.responseText);
-
-        if (event.return_type === 'buffer') {
-          response.payload = Buffer.from(response.payload);
-        }
-        resolve(response);
-      }
-    };
-
-    xhr.send(JSON.stringify(event));
-    */
   });
 };
 
@@ -140,28 +119,23 @@ exports.stt = (event) => {
  *                            translation.
  */
 exports.translate = (event) => {
-  return new Promise((resolve) => {
-    const LOCRIS_TRANSLATE = 'https://locris.api.orionaster.com/translate';
-    const locrisTranslateURL = process.env.LOCRIS_TRANSLATE || LOCRIS_TRANSLATE;
+  return new Promise((resolve, reject) => {
+    const url = process.env.LOCRIS_TRANSLATE || 'https://locris.api.orionaster.com/translate';
 
-    const xhr = new XMLHttpRequest();
-
-    xhr.open('POST', locrisTranslateURL, true);
-
-    xhr.setRequestHeader('Content-Type', 'application/json');
-
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        var response = JSON.parse(xhr.responseText);
-
+    axios({
+      method: 'POST',
+      url: url,
+      data: event,
+    }).then((response) => {
+      if (response.status === 200) {
         if (event.return_type === 'buffer') {
-          response.payload = Buffer.from(response.payload);
+          response.data.payload = Buffer.from(response.data.payload);
         }
-        resolve(response);
+        resolve(response.data);
+      } else {
+        reject(response);
       }
-    };
-
-    xhr.send(JSON.stringify(event));
+    });
   });
 };
 
