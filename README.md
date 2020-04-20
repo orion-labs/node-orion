@@ -1,4 +1,5 @@
 # node-orion - Node.js Module for Orion.
+[![Build Status](https://travis-ci.org/orion-labs/node-orion.svg?branch=master)](https://travis-ci.org/orion-labs/node-orion)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/orion-labs/node-orion/graphs/commit-activity)
 [![HitCount](http://hits.dwyl.io/orion-labs/node-orion.svg)](http://hits.dwyl.io/orion-labs/node-orion)
 [![Dependencies Status](https://img.shields.io/david/orion-labs/node-orion.svg)](https://david-dm.org/orion-labs/node-orion)

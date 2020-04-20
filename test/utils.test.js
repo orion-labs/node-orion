@@ -16,3 +16,49 @@ describe('wav2ov', () => {
     });
   });
 });
+
+describe('ov2wav', () => {
+  it('Should decode Orion Opus Audio (OV) to WAV/PCM Audio URL', () => {
+    const event = {
+      media: 'https://alnitak-rx.orionlabs.io/b9577f6f-668f-423b-bb9a-11d1ace77f42.ov',
+      ts: 1587406431.588,
+      id: '81a84c52ff91497aa6182d09e66d50f8',
+      sender: '2a6d61f9023342c8855423ba36128a19',
+      event_type: 'ptt',
+      sender_token_hash: '388b20153a4c47b386120fc3e05c88bc',
+      ptt_seqnum: '1587406432.056607',
+      sender_name: 'G2347',
+      ptt_id: 'fc6c96a1e09e4aeda45cc6e5babac1fe',
+      eventId: 'fc6c96a1e09e4aeda45cc6e5babac1fe',
+    };
+
+    return OrionClient.utils.ov2wav(event).then((resolve) => {
+      expect(resolve).toBeDefined();
+      expect(resolve.media).toBeDefined();
+      expect(resolve.media_wav).toBeDefined();
+    });
+  });
+
+  it('Should decode Orion Opus Audio (OV) to WAV/PCM Audio Buffer', () => {
+    const event = {
+      media: 'https://alnitak-rx.orionlabs.io/b9577f6f-668f-423b-bb9a-11d1ace77f42.ov',
+      ts: 1587406431.588,
+      id: '81a84c52ff91497aa6182d09e66d50f8',
+      sender: '2a6d61f9023342c8855423ba36128a19',
+      event_type: 'ptt',
+      sender_token_hash: '388b20153a4c47b386120fc3e05c88bc',
+      ptt_seqnum: '1587406432.056607',
+      sender_name: 'G2347',
+      ptt_id: 'fc6c96a1e09e4aeda45cc6e5babac1fe',
+      eventId: 'fc6c96a1e09e4aeda45cc6e5babac1fe',
+      return_type: 'buffer',
+    };
+
+    return OrionClient.utils.ov2wav(event).then((resolve) => {
+      expect(resolve).toBeDefined();
+      expect(resolve.media).toBeDefined();
+      expect(resolve.payload).toBeDefined();
+      expect(resolve.payload).toBeInstanceOf(Buffer);
+    });
+  });
+});

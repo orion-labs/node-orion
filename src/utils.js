@@ -62,9 +62,25 @@ exports.lyre = (token, groups, message = '', media = '', target = '') => {
  * @returns {Promise<Object>} Transformed event containing wav file.
  */
 exports.ov2wav = (event) => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const url = process.env.LOCRIS_OV2WAV || 'https://locris.api.orionaster.com/ov2wav';
 
+    axios({
+      method: 'POST',
+      url: url,
+      data: event,
+    }).then((response) => {
+      if (response.status === 200) {
+        if (event.return_type === 'buffer') {
+          response.data.payload = Buffer.from(response.data.payload);
+        }
+        resolve(response.data);
+      } else {
+        reject(response);
+      }
+    });
+
+    /*
     let xhr = new XMLHttpRequest();
 
     xhr.open('POST', url, true);
@@ -83,6 +99,7 @@ exports.ov2wav = (event) => {
     };
 
     xhr.send(JSON.stringify(event));
+    */
   });
 };
 

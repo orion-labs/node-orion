@@ -213,7 +213,6 @@ const connectToWebsocket = (token) => {
     connectToWebsocket.server = new WebSocket(wsURL, wsOptions);
 
     connectToWebsocket.server.onopen = () => {
-      console.debug('Socket Connected');
       resolve(connectToWebsocket.server);
     };
 
