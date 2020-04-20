@@ -22,7 +22,6 @@
 'use strict';
 
 const axios = require('axios');
-const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 
 /**
  * Transmits to an Orion Group.
@@ -34,8 +33,9 @@ const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
  * @returns {Promise<Object>}
  */
 exports.lyre = (token, groups, message = '', media = '', target = '') => {
-  const url = process.env.LYRE_URL || 'https://lyre.api.orionaster.com/lyre';
   return new Promise((resolve, reject) => {
+    const url = process.env.LYRE_URL || 'https://lyre.api.orionaster.com/lyre';
+
     axios({
       method: 'POST',
       url: url,
@@ -88,27 +88,23 @@ exports.ov2wav = (event) => {
  * @returns {Promise<Object>} Transformed event containing transcription.
  */
 exports.stt = (event) => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const url = process.env.LOCRIS_STT || 'https://locris.api.orionaster.com/stt';
 
-    let xhr = new XMLHttpRequest();
-
-    xhr.open('POST', url, true);
-
-    xhr.setRequestHeader('Content-Type', 'application/json');
-
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        let response = JSON.parse(xhr.responseText);
-
+    axios({
+      method: 'POST',
+      url: url,
+      data: event,
+    }).then((response) => {
+      if (response.status === 200) {
         if (event.return_type === 'buffer') {
-          response.payload = Buffer.from(response.payload);
+          response.data.payload = Buffer.from(response.data.payload);
         }
-        resolve(response);
+        resolve(response.data);
+      } else {
+        reject(response);
       }
-    };
-
-    xhr.send(JSON.stringify(event));
+    });
   });
 };
 
@@ -145,23 +141,22 @@ exports.translate = (event) => {
  * @returns {Promise<Object>} Resolves original object + media URL to ov file.
  */
 exports.wav2ov = (event) => {
-  return new Promise((resolve) => {
-    const LOCRIS_WAV2OV = 'https://locris.api.orionaster.com/wav2ov';
-    const locrisWAV2OVURL = process.env.LOCRIS_WAV2OV || LOCRIS_WAV2OV;
+  return new Promise((resolve, reject) => {
+    const url = process.env.LOCRIS_WAV2OV || 'https://locris.api.orionaster.com/wav2ov';
 
-    const xhr = new XMLHttpRequest();
-
-    xhr.open('POST', locrisWAV2OVURL, true);
-
-    xhr.setRequestHeader('Content-Type', 'application/json');
-
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        const response = JSON.parse(xhr.responseText);
-        resolve(response);
+    axios({
+      method: 'POST',
+      url: url,
+      data: event,
+    }).then((response) => {
+      if (response.status === 200) {
+        if (event.return_type === 'buffer') {
+          response.data.payload = Buffer.from(response.data.payload);
+        }
+        resolve(response.data);
+      } else {
+        reject(response);
       }
-    };
-
-    xhr.send(JSON.stringify(event));
+    });
   });
 };

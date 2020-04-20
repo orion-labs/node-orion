@@ -1,6 +1,6 @@
 {
   "name": "@orionlabs/node-orion",
-  "version": "1.0.0b2",
+  "version": "1.0.0b3",
   "description": "Node.js Library for Orion Labs communications platform.",
   "main": "src/main.js",
   "scripts": {
