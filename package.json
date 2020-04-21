@@ -1,6 +1,6 @@
 {
   "name": "@orionlabs/node-orion",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0",
   "description": "Node.js Module for Orion.",
   "main": "src/main.js",
   "scripts": {
