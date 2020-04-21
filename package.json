@@ -1,6 +1,6 @@
 {
   "name": "@orionlabs/node-orion",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0-beta.5",
   "description": "Node.js Library for Orion Labs communications platform.",
   "main": "src/main.js",
   "scripts": {
@@ -21,7 +21,6 @@
   "dependencies": {
     "@orionlabs/node-orion": "./",
     "axios": "latest",
-    "babel": "^6.23.0",
     "fs-extra": "^9.0.0",
     "swagger-client": "latest",
     "ws": "latest",
@@ -36,8 +35,6 @@
     "husky": "latest",
     "jest": "latest",
     "lint-staged": "latest",
-    "prettier": "latest",
-    "swagmock": "latest",
-    "xmlhttprequest": "latest"
+    "prettier": "latest"
   }
 }
