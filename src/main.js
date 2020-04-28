@@ -1,21 +1,10 @@
 /**
  * Orion Node.js Module. Functions for connecting to the Orion Platform.
  *
- * Copyright Orion Labs, Inc. https://www.orionlabs.io
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
  * @module @orionlabs/node-orion
+ * @author Greg Albrecht <gba@orionlabs.io>
+ * @copyright Orion Labs, Inc. https://www.orionlabs.io
+ * @license Apache-2.0
  **/
 
 'use strict';
@@ -398,7 +387,7 @@ exports.sendMultimediaEvent = sendMultimediaEvent;
  * @param token {String} Orion Authentication Token
  * @param message {String} Message to transmit
  * @param groupId {String} Group to transmit to
- * @param streamKey {String} If present, encrypt message with key
+ * @param streamKey {String} If present, indicates message is encrypted w/ key
  * @returns {Promise<Object>} Return status and body, if any.
  */
 const sendTextMessage = (token, message, groupId, streamKey = '') => {

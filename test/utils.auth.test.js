@@ -1,3 +1,11 @@
+/**
+ * Orion Node.js Module Tests.
+ *
+ * @author Greg Albrecht <gba@orionlabs.io>
+ * @copyright Orion Labs, Inc. https://www.orionlabs.io
+ * @license Apache-2.0
+ **/
+
 'use strict';
 
 const OrionClient = require('./../src/main');
