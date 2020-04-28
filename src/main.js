@@ -23,6 +23,7 @@
 const axios = require('axios');
 const Swagger = require('swagger-client');
 const WebSocket = require('ws');
+const uuid = require('uuid');
 
 const utils = require('./utils');
 exports.utils = utils;
@@ -316,3 +317,117 @@ const getGroup = (token, groupId) => {
   });
 };
 exports.getGroup = getGroup;
+
+/**
+ * Gets the media base URL for the current user.
+ * @param token {String} Orion Auth Token.
+ * @returns {Promise<String>} Media Base URL
+ */
+const getMediaBase = (token) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: 'GET',
+      url: 'https://api.orionlabs.io/admin/mediabase',
+      headers: { Authorization: token },
+    }).then((response) => {
+      if (response.status === 200) {
+        resolve(response.data.mediabase);
+      } else {
+        reject(response.data);
+      }
+    });
+  });
+};
+exports.getMediaBase = getMediaBase;
+
+/**
+ * PUTs (Uploads) Media to the given URL.
+ * @param url {String} Media URL to upload to.
+ * @param content {String|Array} Media content to PUT.
+ * @returns {Promise<Object>} Return status and body, if any.
+ */
+const putMedia = (url, content) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: 'PUT',
+      url: url,
+      data: content,
+    }).then((response) => {
+      if (response.status === 200) {
+        resolve(response.data);
+      } else {
+        reject(response.data);
+      }
+    });
+  });
+};
+exports.putMedia = putMedia;
+
+/**
+ * Transmits multimedia to a given Orion group.
+ * @param token {String} Orion Authentication Token
+ * @param groupId {String} Orion Group to transmit to
+ * @param event {Object} Event to transmit
+ * @returns {Promise<Object>} Return status and body, if any.
+ */
+const sendMultimediaEvent = (token, groupId, event) => {
+  const url = `https://api.orionlabs.io/multimedia/${groupId}`;
+  return new Promise((resolve, reject) => {
+    axios({
+      method: 'POST',
+      url: url,
+      headers: { Authorization: token },
+      data: event,
+    })
+      .then((response) => {
+        if (response.status === 204) {
+          resolve(response.data);
+        } else {
+          reject(response.data);
+        }
+      })
+      .catch((response) => {
+        reject(response);
+      });
+  });
+};
+exports.sendMultimediaEvent = sendMultimediaEvent;
+
+/**
+ * Sends a Text Multimedia message to a group.
+ * @param token {String} Orion Authentication Token
+ * @param message {String} Message to transmit
+ * @param groupId {String} Group to transmit to
+ * @param streamKey {String} If present, encrypt message with key
+ * @returns {Promise<Object>} Return status and body, if any.
+ */
+const sendTextMessage = (token, message, groupId, streamKey = '') => {
+  // Generate a pseudo random file name, doesn't really matter:
+  const fileName = uuid.v4();
+
+  return new Promise((resolve) => {
+    getMediaBase(token).then((response) => {
+      const mediaURL = response + fileName;
+      putMedia(mediaURL, message).then(() => {
+        let event = {
+          event_type: 'text',
+          text_event: {
+            media: mediaURL,
+            char_set: 'utf-8',
+            mime_type: 'text/plain',
+            ts: 0,
+          },
+        };
+
+        if (streamKey) {
+          event.text_event.stream_key = streamKey;
+        }
+
+        sendMultimediaEvent(token, groupId, event).then((response) => {
+          resolve(response);
+        });
+      });
+    });
+  });
+};
+exports.sendTextMessage = sendTextMessage;

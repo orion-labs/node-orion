@@ -20,6 +20,14 @@
 
 const OrionClient = require('./../src/main');
 
+let OrionCrypto = false;
+try {
+  require.resolve('@orionlabs/node-orion-crypto');
+  OrionCrypto = require('@orionlabs/node-orion-crypto');
+} catch (exception) {
+  OrionCrypto = false;
+}
+
 describe('auth', () => {
   it('Should Login to Orion and retrieve a Token & User ID', () => {
     const username = process.env.TEST_ORION_USERNAME;
@@ -248,4 +256,57 @@ describe('getGroup', () => {
       });
     });
   });
+});
+
+describe('sendTextMessage', () => {
+  it('Should send a text message to a group', () => {
+    const username = process.env.TEST_ORION_USERNAME;
+    const password = process.env.TEST_ORION_PASSWORD;
+    const groups = process.env.TEST_ORION_GROUPS;
+
+    return OrionClient.auth(username, password).then((resolve) => {
+      expect(resolve).toBeInstanceOf(Object);
+      expect(resolve).toBeDefined();
+
+      const token = resolve.token;
+
+      expect(token).toBeDefined();
+
+      const message = 'Hello from a unit test!';
+      return OrionClient.sendTextMessage(token, message, groups).then((response) => {
+        console.log(response);
+        expect(response).toBeDefined();
+      });
+    });
+  });
+
+  if (OrionCrypto) {
+    it('Should send an encrypted text message to a group', () => {
+      const username = process.env.TEST_ORION_USERNAME;
+      const password = process.env.TEST_ORION_PASSWORD;
+      const groups = process.env.TEST_ORION_GROUPS;
+
+      return OrionClient.auth(username, password).then((resolve) => {
+        expect(resolve).toBeInstanceOf(Object);
+        expect(resolve).toBeDefined();
+
+        const token = resolve.token;
+
+        expect(token).toBeDefined();
+
+        let message = 'Hello from a unit test!';
+
+        let streamKey;
+        if (OrionCrypto) {
+          streamKey = OrionCrypto.utils.generateStreamKey();
+          message = OrionCrypto.encryptText(streamKey, message);
+        }
+
+        return OrionClient.sendTextMessage(token, message, groups, streamKey).then((response) => {
+          console.log(response);
+          expect(response).toBeDefined();
+        });
+      });
+    });
+  }
 });
