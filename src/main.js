@@ -318,13 +318,17 @@ const getMediaBase = (token) => {
       method: 'GET',
       url: 'https://api.orionlabs.io/admin/mediabase',
       headers: { Authorization: token },
-    }).then((response) => {
-      if (response.status === 200) {
-        resolve(response.data.mediabase);
-      } else {
-        reject(response.data);
-      }
-    });
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          resolve(response.data.mediabase);
+        } else {
+          reject(response.data);
+        }
+      })
+      .catch((reason) => {
+        reject(reason);
+      });
   });
 };
 exports.getMediaBase = getMediaBase;
@@ -341,13 +345,17 @@ const putMedia = (url, content) => {
       method: 'PUT',
       url: url,
       data: content,
-    }).then((response) => {
-      if (response.status === 200) {
-        resolve(response.data);
-      } else {
-        reject(response.data);
-      }
-    });
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          resolve(response.data);
+        } else {
+          reject(response.data);
+        }
+      })
+      .catch((reason) => {
+        reject(reason);
+      });
   });
 };
 exports.putMedia = putMedia;
@@ -392,31 +400,46 @@ exports.sendMultimediaEvent = sendMultimediaEvent;
  */
 const sendTextMessage = (token, message, groupId, streamKey = '') => {
   // Generate a pseudo random file name, doesn't really matter:
-  const fileName = uuid.v4();
+  const fileName = uuid.v4() + '.txt';
 
-  return new Promise((resolve) => {
-    getMediaBase(token).then((response) => {
-      const mediaURL = response + fileName;
-      putMedia(mediaURL, message).then(() => {
-        let event = {
-          event_type: 'text',
-          text_event: {
-            media: mediaURL,
-            char_set: 'utf-8',
-            mime_type: 'text/plain',
-            ts: 0,
-          },
-        };
-
-        if (streamKey) {
-          event.text_event.stream_key = streamKey;
+  return new Promise((resolve, reject) => {
+    getMediaBase(token)
+      .then((response) => {
+        const mediaURL = response + fileName;
+        if (!streamKey && !message.startsWith('Vt11')) {
+          message = 'Vt11' + message;
         }
+        putMedia(mediaURL, message)
+          .then(() => {
+            let event = {
+              event_type: 'text',
+              text_event: {
+                media: mediaURL,
+                char_set: 'utf-8',
+                mime_type: 'text/plain',
+                ts: 0,
+              },
+            };
 
-        sendMultimediaEvent(token, groupId, event).then((response) => {
-          resolve(response);
-        });
+            if (streamKey) {
+              event.text_event.stream_key = streamKey;
+            }
+
+            sendMultimediaEvent(token, groupId, event)
+              .then((response) => {
+                resolve(response);
+              })
+              .catch((reason) => {
+                reject(reason);
+              });
+          })
+          .catch((reason) => {
+            reject(reason);
+          });
+      })
+      .catch((reason) => {
+        reject(reason);
       });
-    });
   });
 };
 exports.sendTextMessage = sendTextMessage;
