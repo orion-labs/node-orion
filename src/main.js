@@ -189,14 +189,6 @@ exports.getAllUserGroups = getAllUserGroups;
 const connectToWebsocket = (token) => {
   const wsURL = 'wss://alnilam.orionlabs.io/stream/wss';
 
-  if (connectToWebsocket.server && connectToWebsocket.server.readyState < 2) {
-    console.debug(
-      `Re-using the socket connection [state=${connectToWebsocket.server.readyState}]: ` +
-        `${connectToWebsocket.server.url}`,
-    );
-    return Promise.resolve(connectToWebsocket.server);
-  }
-
   const wsOptions = { headers: { Authorization: token } };
 
   return new Promise((resolve, reject) => {
