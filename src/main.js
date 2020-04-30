@@ -11,7 +11,8 @@
 
 const axios = require('axios');
 const Swagger = require('swagger-client');
-const WebSocket = require('ws');
+const ws = require('ws');
+const WebSocket = require('reconnecting-websocket');
 const uuid = require('uuid');
 
 const utils = require('./utils');
@@ -182,26 +183,56 @@ const getAllUserGroups = (token) => {
 exports.getAllUserGroups = getAllUserGroups;
 
 /**
+ * Gets an Web Socket Ticket
+ * @param token {String} Orion Auth Token
+ * @returns {Promise<String>} Web Socket Ticket
+ */
+const getAlmilamTicket = (token) => {
+  return new Promise((resolve, reject) => {
+    const url = 'https://alnilam.orionlabs.io/api/ticket';
+    axios({
+      method: 'GET',
+      url: url,
+      headers: { Authorization: token },
+    }).then((response) => {
+      if (response.status == 200) {
+        resolve(response.data);
+      } else {
+        reject(response);
+      }
+    });
+  });
+};
+exports.getAlmilamTicket = getAlmilamTicket;
+
+/**
  * Connects to the Orion Event Stream Websocket
- * @param token {String} Orion Authentication Token
+ * @param token {String} Orion Auth Ticket
  * @returns {Promise<ws>} Websocket session
  */
 const connectToWebsocket = (token) => {
-  const wsURL = 'wss://alnilam.orionlabs.io/stream/wss';
-
-  const wsOptions = { headers: { Authorization: token } };
-
   return new Promise((resolve, reject) => {
-    connectToWebsocket.server = new WebSocket(wsURL, wsOptions);
+    getAlmilamTicket(token).then((result) => {
+      const tokenId = result.token_id;
+      const wsURL = `wss://alnilam.orionlabs.io/stream/${tokenId}/wss`;
 
-    connectToWebsocket.server.onopen = () => {
-      resolve(connectToWebsocket.server);
-    };
+      const wsOptions = {
+        WebSocket: ws, // custom WebSocket constructor
+        connectionTimeout: 1000,
+        maxRetries: 30,
+      };
+      connectToWebsocket.server = new WebSocket(wsURL, [], wsOptions);
 
-    connectToWebsocket.server.onerror = (error) => {
-      console.error(`Socket Error=${error}`);
-      reject(error);
-    };
+      connectToWebsocket.server.addEventListener('open', () => {
+        resolve(connectToWebsocket.server);
+      });
+
+      connectToWebsocket.server.addEventListener('error', (error) => {
+        console.error(`Socket Error=${error}`);
+        console.error(error);
+        reject(error);
+      });
+    });
   });
 };
 exports.connectToWebsocket = connectToWebsocket;

@@ -176,7 +176,7 @@ describe('getUserStatus', () => {
 
       return OrionClient.getUserStatus(token, userId).then((resolve) => {
         expect(resolve).toBeInstanceOf(Object);
-        expect(resolve.groups.length).toBeLessThanOrEqual(1);
+        expect(resolve.groups.length).toBeGreaterThanOrEqual(1);
       });
     });
   });
