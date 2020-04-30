@@ -218,8 +218,8 @@ const connectToWebsocket = (token) => {
 
       const wsOptions = {
         WebSocket: ws, // custom WebSocket constructor
-        connectionTimeout: 1000,
-        maxRetries: 30,
+        connectionTimeout: 10000,
+        maxRetries: 10,
       };
       connectToWebsocket.server = new WebSocket(wsURL, [], wsOptions);
 
