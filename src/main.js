@@ -147,7 +147,7 @@ const engage = (token, groups, verbosity = 'active') => {
         if (response.status === 200) {
           resolve(response.data);
         } else {
-          reject(new Error(response));
+          reject(response);
         }
       })
       .catch((response) => {
@@ -211,7 +211,7 @@ exports.getAlmilamTicket = getAlmilamTicket;
  * @returns {Promise<ws>} Websocket session
  */
 const connectToWebsocket = (token) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     getAlmilamTicket(token).then((result) => {
       const tokenId = result.token_id;
       const wsURL = `wss://alnilam.orionlabs.io/stream/${tokenId}/wss`;
@@ -225,12 +225,6 @@ const connectToWebsocket = (token) => {
 
       connectToWebsocket.server.addEventListener('open', () => {
         resolve(connectToWebsocket.server);
-      });
-
-      connectToWebsocket.server.addEventListener('error', (error) => {
-        console.error(`Socket Error=${error}`);
-        console.error(error);
-        reject(error);
       });
     });
   });
@@ -248,13 +242,18 @@ const pong = (token) => {
       url: 'https://api.orionlabs.io/api/pong',
       method: 'POST',
       headers: { Authorization: token },
-    }).then(({ status, data }) => {
-      if (status === 200) {
-        resolve(data);
-      } else {
-        reject(new Error('error'));
-      }
-    });
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          resolve(response.data);
+        } else {
+          const errorMsg = `status=${response.status} ` + `statusText=${response.statusText}`;
+          reject(new Error(errorMsg));
+        }
+      })
+      .catch((response) => {
+        reject(response);
+      });
   });
 };
 exports.pong = pong;
