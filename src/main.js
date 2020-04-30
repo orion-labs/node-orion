@@ -220,6 +220,7 @@ const connectToWebsocket = (token) => {
         WebSocket: ws, // custom WebSocket constructor
         connectionTimeout: 10000,
         maxRetries: 10,
+        debug: process.env.DEBUG || false,
       };
       connectToWebsocket.server = new WebSocket(wsURL, [], wsOptions);
 
