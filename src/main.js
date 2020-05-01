@@ -213,19 +213,20 @@ exports.getAlmilamTicket = getAlmilamTicket;
 const connectToWebsocket = (token) => {
   return new Promise((resolve) => {
     getAlmilamTicket(token).then((result) => {
-      const tokenId = result.token_id;
-      const wsURL = `wss://alnilam.orionlabs.io/stream/${tokenId}/wss`;
+      let tokenId = result.token_id;
+      let wsURL = `wss://alnilam.orionlabs.io/stream/${tokenId}/wss`;
 
       const wsOptions = {
-        WebSocket: ws, // custom WebSocket constructor
+        WebSocket: ws,
         connectionTimeout: 10000,
         maxRetries: 10,
         debug: process.env.DEBUG || false,
       };
-      connectToWebsocket.server = new WebSocket(wsURL, [], wsOptions);
 
-      connectToWebsocket.server.addEventListener('open', () => {
-        resolve(connectToWebsocket.server);
+      let wsConnection = new WebSocket(wsURL, [], wsOptions);
+
+      wsConnection.addEventListener('open', () => {
+        resolve(wsConnection);
       });
     });
   });
