@@ -414,7 +414,7 @@ exports.sendMultimediaEvent = sendMultimediaEvent;
  * @param streamKey {String} If present, indicates message is encrypted w/ key
  * @returns {Promise<Object>} Return status and body, if any.
  */
-const sendTextMessage = (token, message, groupId, streamKey = '') => {
+const sendTextMessage = (token, message, groupId, target = null, streamKey = '') => {
   // Generate a pseudo random file name, doesn't really matter:
   const fileName = uuid.v4() + '.txt';
 
@@ -436,6 +436,10 @@ const sendTextMessage = (token, message, groupId, streamKey = '') => {
                 ts: 0,
               },
             };
+
+            if (target) {
+              event.text_event.target_user_id = target;
+            }
 
             if (streamKey) {
               event.text_event.stream_key = streamKey;
