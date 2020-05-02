@@ -11,8 +11,7 @@
 
 const axios = require('axios');
 const Swagger = require('swagger-client');
-const ws = require('ws');
-const WebSocket = require('reconnecting-websocket');
+const WebSocket = require('ws');
 const uuid = require('uuid');
 
 const utils = require('./utils');
@@ -216,14 +215,7 @@ const connectToWebsocket = (token) => {
       let tokenId = result.token_id;
       let wsURL = `wss://alnilam.orionlabs.io/stream/${tokenId}/wss`;
 
-      const wsOptions = {
-        WebSocket: ws,
-        connectionTimeout: 10000,
-        maxRetries: 10,
-        debug: process.env.DEBUG || false,
-      };
-
-      let wsConnection = new WebSocket(wsURL, [], wsOptions);
+      let wsConnection = new WebSocket(wsURL);
 
       wsConnection.addEventListener('open', () => {
         resolve(wsConnection);
