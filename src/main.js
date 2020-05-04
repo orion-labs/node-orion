@@ -422,7 +422,7 @@ const sendTextMessage = (token, message, groupId, target = null, streamKey = '')
     getMediaBase(token)
       .then((response) => {
         const mediaURL = response + fileName;
-        if (!streamKey && !message.startsWith('Vt11')) {
+        if (!streamKey && typeof message === 'string' && !message.startsWith('Vt11')) {
           message = 'Vt11' + message;
         }
         putMedia(mediaURL, message)
@@ -433,7 +433,7 @@ const sendTextMessage = (token, message, groupId, target = null, streamKey = '')
                 media: mediaURL,
                 char_set: 'utf-8',
                 mime_type: 'text/plain',
-                ts: 0,
+                ts: new Date() / 1000, // {float} Client-side timestamp
               },
             };
 
