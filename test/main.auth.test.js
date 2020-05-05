@@ -300,3 +300,70 @@ describe('sendTextMessage', () => {
     });
   }
 });
+
+describe('uploadMedia', () => {
+  it('Should upload media to Orion', () => {
+    const fileName = 'test/test.ov';
+    const username = process.env.TEST_ORION_USERNAME;
+    const password = process.env.TEST_ORION_PASSWORD;
+
+    return OrionClient.auth(username, password).then((resolve) => {
+      expect(resolve).toBeInstanceOf(Object);
+      expect(resolve).toBeDefined();
+      const token = resolve.token;
+      expect(token).toBeDefined();
+
+      return OrionClient.uploadMedia(token, fileName).then((response) => {
+        expect(response).toBeDefined();
+        expect(response).toContain('https://alnitak.orionlabs.io');
+      });
+    });
+  });
+});
+
+describe('sendPtt', () => {
+  it('Should send a PTT Voice message to a group', () => {
+    const username = process.env.TEST_ORION_USERNAME;
+    const password = process.env.TEST_ORION_PASSWORD;
+    const groups = process.env.TEST_ORION_GROUPS;
+    const fileName = 'test/test.ov';
+
+    return OrionClient.auth(username, password).then((resolve) => {
+      expect(resolve).toBeInstanceOf(Object);
+      expect(resolve).toBeDefined();
+      const token = resolve.token;
+      expect(token).toBeDefined();
+
+      return OrionClient.uploadMedia(token, fileName).then((response) => {
+        const media = response;
+        return OrionClient.sendPtt(token, media, groups).then((response) => {
+          expect(response).toBeDefined();
+        });
+      });
+    });
+  });
+
+  it('Should send a PTT Voice message to a targeted user', () => {
+    const username = process.env.TEST_ORION_USERNAME;
+    const password = process.env.TEST_ORION_PASSWORD;
+    const groups = process.env.TEST_ORION_GROUPS;
+    const fileName = 'test/test.ov';
+
+    return OrionClient.auth(username, password).then((resolve) => {
+      expect(resolve).toBeInstanceOf(Object);
+      expect(resolve).toBeDefined();
+      const token = resolve.token;
+      const userId = resolve.id;
+      expect(token).toBeDefined();
+      expect(userId).toBeDefined();
+
+      return OrionClient.uploadMedia(token, fileName).then((response) => {
+        const media = response;
+        return OrionClient.sendPtt(token, media, groups, userId).then((response) => {
+          console.log(response);
+          expect(response).toBeDefined();
+        });
+      });
+    });
+  });
+});

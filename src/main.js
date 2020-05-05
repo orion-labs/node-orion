@@ -13,6 +13,7 @@ const axios = require('axios');
 const Swagger = require('swagger-client');
 const WebSocket = require('ws');
 const uuid = require('uuid');
+const fs = require('fs');
 
 const utils = require('./utils');
 exports.utils = utils;
@@ -463,3 +464,61 @@ const sendTextMessage = (token, message, groupId, target = null, streamKey = '')
   });
 };
 exports.sendTextMessage = sendTextMessage;
+
+/**
+ * Sends a PTT Voice message to a group.
+ * @param token {String} Orion Authentication Token
+ * @param media {String} Media to transmit
+ * @param groupId {String} Group to transmit to
+ * @param streamKey {String} If present, indicates message is encrypted w/ key
+ * @returns {Promise<Object>} Return status and body, if any.
+ */
+const sendPtt = (token, media, groupId, target = null, streamKey = '') => {
+  return new Promise((resolve, reject) => {
+    let event = {
+      event_type: 'ptt',
+      ptt_event: {
+        media: media,
+        mime_type: 'audio/vnd.orion.opus',
+        ts: new Date() / 1000, // {float} Client-side timestamp
+      },
+    };
+
+    if (target) {
+      event.ptt_event.target_user_id = target;
+    }
+
+    if (streamKey) {
+      event.ptt_event.stream_key = streamKey;
+    }
+
+    console.log(event);
+    sendMultimediaEvent(token, groupId, event)
+      .then((response) => {
+        resolve(response);
+      })
+      .catch((reason) => {
+        reject(reason);
+      });
+  });
+};
+exports.sendPtt = sendPtt;
+
+const uploadMedia = (token, fileName) => {
+  const randFileName = uuid.v4();
+
+  return new Promise((resolve, reject) => {
+    getMediaBase(token).then((response) => {
+      const mediaURL = response + randFileName;
+      const fileContent = fs.readFileSync(fileName);
+      putMedia(mediaURL, fileContent)
+        .then(() => {
+          resolve(mediaURL);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  });
+};
+exports.uploadMedia = uploadMedia;
