@@ -465,6 +465,29 @@ const sendTextMessage = (token, message, groupId, target = null, streamKey = '')
 };
 exports.sendTextMessage = sendTextMessage;
 
+const sendPttEvent = (token, groupId, event) => {
+  const url = `https://api.orionlabs.io/ptt/${groupId}`;
+  return new Promise((resolve, reject) => {
+    axios({
+      method: 'POST',
+      url: url,
+      headers: { Authorization: token },
+      data: { media: event.ptt_event.media, ts: event.ptt_event.ts },
+    })
+      .then((response) => {
+        if (response.status === 204) {
+          resolve(response.data);
+        } else {
+          reject(response.data);
+        }
+      })
+      .catch((response) => {
+        reject(response.data);
+      });
+  });
+};
+exports.sendPttEvent = sendPttEvent;
+
 /**
  * Sends a PTT Voice message to a group.
  * @param token {String} Orion Authentication Token
@@ -492,7 +515,8 @@ const sendPtt = (token, media, groupId, target = null, streamKey = '') => {
       event.ptt_event.stream_key = streamKey;
     }
 
-    sendMultimediaEvent(token, groupId, event)
+    // TODO: Switch to sendMultimediaEvent when Android bug is fixed.
+    sendPttEvent(token, groupId, event)
       .then((response) => {
         resolve(response);
       })
