@@ -11,6 +11,10 @@
 'use strict';
 
 const axios = require('axios');
+const fs = require('fs');
+const tmp = require('tmp');
+
+tmp.setGracefulCleanup();
 
 /**
  * Transmits to an Orion Group.
@@ -149,3 +153,29 @@ exports.wav2ov = (event) => {
     });
   });
 };
+
+const downloadMedia = (url) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: 'GET',
+      url: url,
+      responseType: 'stream',
+    }).then((response) => {
+      if (response.status == 200) {
+        const tmpobj = tmp.fileSync();
+        const writer = fs.createWriteStream(tmpobj.name);
+        response.data.pipe(writer);
+
+        writer.on('finish', () => {
+          resolve(tmpobj.name);
+        });
+        writer.on('error', () => {
+          reject(response);
+        });
+      } else {
+        reject(response);
+      }
+    });
+  });
+};
+exports.downloadMedia = downloadMedia;

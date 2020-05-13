@@ -71,8 +71,15 @@ describe('ov2wav', () => {
   });
 });
 
+describe('downloadMedia', () => {
+  it('Should download media', () => {
+    const url = 'https://orion-agro.herokuapp.com/sine.ov?frequency=2600&seconds=1';
+    return OrionClient.utils.downloadMedia(url).then((result) => {
+      console.log(result);
+    });
+  });
+});
 /*
-
 Need media to be generated:
 describe('translate', () => {
   it('Should translate English to Spanish URL', () => {

@@ -12,14 +12,11 @@
 const axios = require('axios');
 const fs = require('fs');
 const Swagger = require('swagger-client');
-const tmp = require('tmp');
 const uuid = require('uuid');
 const WebSocket = require('ws');
 
 const utils = require('./utils');
 exports.utils = utils;
-
-tmp.setGracefulCleanup();
 
 /**
  * Authenticates against the Orion Platform, and retrieves an Authentication
@@ -524,21 +521,3 @@ const uploadMedia = (token, fileName) => {
   });
 };
 exports.uploadMedia = uploadMedia;
-
-const downloadMedia = (url) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'GET',
-      url: url,
-    }).then((response) => {
-      if (response.status == 200) {
-        const tmpobj = tmp.fileSync();
-        fs.writeFileSync(tmpobj.name, response.data);
-        resolve(tmpobj.name);
-      } else {
-        reject(response);
-      }
-    });
-  });
-};
-exports.downloadMedia = downloadMedia;
