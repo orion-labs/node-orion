@@ -17,6 +17,29 @@ const tmp = require('tmp');
 tmp.setGracefulCleanup();
 
 /**
+ * Wrapper for Axios.
+ * @param url {String} URL to hit
+ * @param method {String} Method to use (default: GET)
+ * @param status {Number} HTTP Status to expect (default: 200)
+ * @param payload {Object} If defined, pass this as 'data'
+ * @returns {Promise<unknown>}
+ */
+const callApi = (url, method = 'POST', status = 200, payload = {}) => {
+  let options = {
+    url: url,
+    method: method,
+    data: payload,
+    validateStatus: (st) => st == status,
+  };
+
+  return new Promise((resolve, reject) => {
+    axios(options)
+      .then((response) => resolve(response.data))
+      .catch((reason) => reject(reason));
+  });
+};
+
+/**
  * Transmits to an Orion Group.
  * @param token {String} Orion Auth Token
  * @param groups {Array} List of Orion Groups to transmit to
@@ -26,27 +49,15 @@ tmp.setGracefulCleanup();
  * @returns {Promise<Object>}
  */
 exports.lyre = (token, groups, message = '', media = '', target = '') => {
-  return new Promise((resolve, reject) => {
-    const url = process.env.LYRE_URL || 'https://lyre.api.orionaster.com/lyre';
-
-    axios({
-      method: 'POST',
-      url: url,
-      data: {
-        token: token,
-        group_ids: groups,
-        message: message || null,
-        media: media || null,
-        target: target,
-      },
-    }).then((response) => {
-      if (response.status === 200) {
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
-  });
+  const url = process.env.LYRE_URL || 'https://lyre.api.orionaster.com/lyre';
+  const payload = {
+    token: token,
+    group_ids: groups,
+    message: message || null,
+    media: media || null,
+    target: target,
+  };
+  return callApi(url, 'POST', 200, payload);
 };
 
 /**
@@ -55,23 +66,12 @@ exports.lyre = (token, groups, message = '', media = '', target = '') => {
  * @returns {Promise<Object>} Transformed event containing wav file.
  */
 exports.ov2wav = (event) => {
-  return new Promise((resolve, reject) => {
-    const url = process.env.LOCRIS_OV2WAV || 'https://locris.api.orionaster.com/ov2wav';
-
-    axios({
-      method: 'POST',
-      url: url,
-      data: event,
-    }).then((response) => {
-      if (response.status === 200) {
-        if (event.return_type === 'buffer') {
-          response.data.payload = Buffer.from(response.data.payload);
-        }
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
+  const url = process.env.LOCRIS_OV2WAV || 'https://locris.api.orionaster.com/ov2wav';
+  return callApi(url, 'POST', 200, event).then((res) => {
+    if (event.return_type === 'buffer') {
+      res.payload = Buffer.from(res.payload);
+    }
+    return res;
   });
 };
 
@@ -81,23 +81,12 @@ exports.ov2wav = (event) => {
  * @returns {Promise<Object>} Transformed event containing transcription.
  */
 exports.stt = (event) => {
-  return new Promise((resolve, reject) => {
-    const url = process.env.LOCRIS_STT || 'https://locris.api.orionaster.com/stt';
-
-    axios({
-      method: 'POST',
-      url: url,
-      data: event,
-    }).then((response) => {
-      if (response.status === 200) {
-        if (event.return_type === 'buffer') {
-          response.data.payload = Buffer.from(response.data.payload);
-        }
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
+  const url = process.env.LOCRIS_STT || 'https://locris.api.orionaster.com/stt';
+  return callApi(url, 'POST', 200, event).then((res) => {
+    if (event.return_type === 'buffer') {
+      res.payload = Buffer.from(res.payload);
+    }
+    return res;
   });
 };
 
@@ -108,23 +97,12 @@ exports.stt = (event) => {
  *                            translation.
  */
 exports.translate = (event) => {
-  return new Promise((resolve, reject) => {
-    const url = process.env.LOCRIS_TRANSLATE || 'https://locris.api.orionaster.com/translate';
-
-    axios({
-      method: 'POST',
-      url: url,
-      data: event,
-    }).then((response) => {
-      if (response.status === 200) {
-        if (event.return_type === 'buffer') {
-          response.data.payload = Buffer.from(response.data.payload);
-        }
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
+  const url = process.env.LOCRIS_TRANSLATE || 'https://locris.api.orionaster.com/translate';
+  return callApi(url, 'POST', 200, event).then((res) => {
+    if (event.return_type === 'buffer') {
+      res.payload = Buffer.from(res.payload);
+    }
+    return res;
   });
 };
 
@@ -134,48 +112,60 @@ exports.translate = (event) => {
  * @returns {Promise<Object>} Resolves original object + media URL to ov file.
  */
 exports.wav2ov = (event) => {
-  return new Promise((resolve, reject) => {
-    const url = process.env.LOCRIS_WAV2OV || 'https://locris.api.orionaster.com/wav2ov';
-
-    axios({
-      method: 'POST',
-      url: url,
-      data: event,
-    }).then((response) => {
-      if (response.status === 200) {
-        if (event.return_type === 'buffer') {
-          response.data.payload = Buffer.from(response.data.payload);
-        }
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
+  const url = process.env.LOCRIS_WAV2OV || 'https://locris.api.orionaster.com/wav2ov';
+  return callApi(url, 'POST', 200, event).then((res) => {
+    if (event.return_type === 'buffer') {
+      res.payload = Buffer.from(res.payload);
+    }
+    return res;
   });
 };
 
-const downloadMedia = (url) => {
+/**
+ * GETs Media from the given URL.
+ * @param url {String} URL from which to GET media
+ * @returns {Promise<unknown>}
+ */
+const getMedia = (url) => {
   return new Promise((resolve, reject) => {
     axios({
       method: 'GET',
       url: url,
       responseType: 'stream',
-    }).then((response) => {
-      if (response.status == 200) {
+      validateStatus: (status) => status == 200,
+    })
+      .then((response) => {
         const tmpobj = tmp.fileSync();
         const writer = fs.createWriteStream(tmpobj.name);
         response.data.pipe(writer);
-
         writer.on('finish', () => {
           resolve(tmpobj.name);
         });
         writer.on('error', () => {
-          reject(response);
+          reject(response.data);
         });
-      } else {
-        reject(response);
-      }
-    });
+      })
+      .catch((reason) => reject(reason));
   });
 };
-exports.downloadMedia = downloadMedia;
+exports.getMedia = getMedia;
+
+/**
+ * PUTs (Uploads) Data to the given URL.
+ * @param url {String} URL to which we'll PUT Data
+ * @param data {Uint8Array} Data to PUT
+ * @returns {Promise<Object>} Returns response
+ */
+const putMedia = (url, data) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: 'PUT',
+      url: url,
+      data: data,
+      validateStatus: (status) => status == 200,
+    })
+      .then((response) => resolve(response.data))
+      .catch((reason) => reject(reason));
+  });
+};
+exports.putMedia = putMedia;

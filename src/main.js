@@ -19,12 +19,40 @@ const utils = require('./utils');
 exports.utils = utils;
 
 /**
- * Authenticates against the Orion Platform, and retrieves an Authentication
- * Token. Every token has a pre-determined TTL and is associated with a
- * sessionId, which can be used to logout using the logout() call.
+ * Wrapper for Axios with pre-built headers for Orion API calls.
+ * @param token {String} API Auth Token to use
+ * @param url {String} URL to hit
+ * @param method {String} Method to use (default: GET)
+ * @param status {Number} HTTP Status to expect (default: 200)
+ * @param payload {Object} If defined, pass this as 'data'
+ * @returns {Promise<unknown>}
+ */
+const callOrion = (token, url, method = 'GET', status = 200, payload = {}) => {
+  let options = {
+    url: url,
+    method: method,
+    data: payload,
+    headers: { Authorization: token },
+    validateStatus: (st) => st == status,
+  };
+
+  return new Promise((resolve, reject) => {
+    axios(options)
+      .then((response) => resolve(response.data))
+      .catch((reason) => reject(reason));
+  });
+};
+
+/**
+ * Authenticates against the Orion Platform, and retrieves an Auth Object:
+ * {
+ *   token: API Auth Token,
+ *   id: Your platform user Id,
+ *   sessionId: The unique Session Id for this token.
+ * }
  * @param username {string} Username for Orion
  * @param password {string} Password for Orion
- * @returns {Promise<Object>} Resolves to {id: str, token: str}
+ * @returns {Promise<Object>} Authentication object
  */
 const auth = (username, password) => {
   return new Promise((resolve, reject) => {
@@ -34,9 +62,7 @@ const auth = (username, password) => {
         client.apis.auth
           .login({ body: authParams })
           .then((response) => resolve(response.body))
-          .catch((response) => {
-            reject(response.response.body);
-          });
+          .catch((reason) => reject(reason.response.body));
       })
       .catch((error) => reject(error));
   });
@@ -51,21 +77,9 @@ exports.login = auth;
  * @param sessionId {string} ID of the Orion Session to logout from
  * @returns {Promise<Object>} Resolves or Rejects successful logout
  */
-const logout = (sessionId) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      url: `https://api.orionlabs.io/api/logout/${sessionId}`,
-      method: 'POST',
-    }).then((response) => {
-      if (response.status === 200) {
-        resolve(response.data);
-      } else {
-        const errorMsg = `status=${response.status} ` + `statusText=${response.statusText}`;
-        reject(new Error(errorMsg));
-      }
-    });
-  });
-};
+const logout = (token, sessionId) =>
+  callOrion(token, `https://api.orionlabs.io/api/logout/${sessionId}`, 'POST', 204);
+
 exports.logout = logout;
 
 /**
@@ -73,22 +87,7 @@ exports.logout = logout;
  * @param token {String} Orion Auth Token
  * @returns {Promise<Object>} Resolves to the User's Profile as an Object
  */
-const whoami = (token) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'GET',
-      url: 'https://api.orionlabs.io/api/whoami',
-      headers: { Authorization: token },
-    }).then((response) => {
-      if (response.status === 200) {
-        resolve(response.data);
-      } else {
-        const errorMsg = `status=${response.status} ` + `statusText=${response.statusText}`;
-        reject(new Error(errorMsg));
-      }
-    });
-  });
-};
+const whoami = (token) => callOrion(token, 'https://api.orionlabs.io/api/whoami');
 exports.whoami = whoami;
 
 /**
@@ -98,25 +97,13 @@ exports.whoami = whoami;
  * @returns {Promise<Object>} Updated User Status
  */
 const updateUserStatus = (token, userstatus) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'PATCH',
-      url: `https://api.orionlabs.io/api/users/${userstatus.id}/status`,
-      headers: { Authorization: token },
-      data: userstatus,
-    })
-      .then((response) => {
-        if (response.status === 204) {
-          resolve(response.data);
-        } else {
-          const errorMsg = `status=${response.status} ` + `statusText=${response.statusText}`;
-          reject(new Error(errorMsg));
-        }
-      })
-      .catch((reason) => {
-        reject(reason);
-      });
-  });
+  return callOrion(
+    token,
+    `https://api.orionlabs.io/api/users/${userstatus.id}/status`,
+    'PATCH',
+    204,
+    userstatus,
+  );
 };
 exports.updateUserStatus = updateUserStatus;
 
@@ -132,28 +119,13 @@ const engage = (token, groups, verbosity = 'active') => {
     groups = groups.split(',');
   }
 
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'POST',
-      url: 'https://api.orionlabs.io/api/engage',
-      headers: { Authorization: token },
-      data: {
-        seqnum: Date.now(),
-        groupIds: groups,
-        destinations: [{ destination: 'EventStream', verbosity: verbosity }],
-      },
-    })
-      .then((response) => {
-        if (response.status === 200) {
-          resolve(response.data);
-        } else {
-          reject(response);
-        }
-      })
-      .catch((response) => {
-        reject(response.response.data);
-      });
-  });
+  let payload = {
+    seqnum: Date.now(),
+    groupIds: groups,
+    destinations: [{ destination: 'EventStream', verbosity: verbosity }],
+  };
+
+  return callOrion(token, 'https://api.orionlabs.io/api/engage', 'POST', 200, payload);
 };
 exports.engage = engage;
 
@@ -164,20 +136,9 @@ exports.engage = engage;
  */
 const getAllUserGroups = (token) => {
   return whoami(token).then((resolve) => {
-    const userId = resolve.id;
-    return new Promise((resolve, reject) => {
-      axios({
-        method: 'GET',
-        url: `https://api.orionlabs.io/api/users/${userId}`,
-        headers: { Authorization: token },
-      }).then((response) => {
-        if (response.status === 200) {
-          resolve(response.data.groups);
-        } else {
-          reject(response);
-        }
-      });
-    });
+    return callOrion(token, `https://api.orionlabs.io/api/users/${resolve.id}`).then(
+      (res) => res.groups,
+    );
   });
 };
 exports.getAllUserGroups = getAllUserGroups;
@@ -187,23 +148,224 @@ exports.getAllUserGroups = getAllUserGroups;
  * @param token {String} Orion Auth Token
  * @returns {Promise<String>} Web Socket Ticket
  */
-const getAlmilamTicket = (token) => {
+const getAlmilamTicket = (token) => callOrion(token, 'https://alnilam.orionlabs.io/api/ticket');
+exports.getAlmilamTicket = getAlmilamTicket;
+
+/**
+ * Respond to an Orion Event Stream keepalive 'Ping'
+ * @param token {String} Orion Authentication Token
+ * @returns {Promise<Object>} Updated Stream Configuration
+ */
+const pong = (token) => callOrion(token, 'https://api.orionlabs.io/api/pong');
+exports.pong = pong;
+
+/**
+ * Gets User Status for the given User Id
+ * @param token {String} Orion Authentication Token
+ * @param userId {String} Orion User Id
+ * @returns {Promise<Object>} Orion User Profile
+ */
+const getUserStatus = (token, userId) =>
+  callOrion(token, `https://api.orionlabs.io/api/users/${userId}/status`);
+exports.getUserStatus = getUserStatus;
+
+/**
+ * Gets User Profile for the given User Id
+ * @param token {String} Orion Authentication Token
+ * @param userId {String} Orion User Id
+ * @returns {Promise<Object>} User Profile
+ */
+const getUser = (token, userId) => callOrion(token, `https://api.orionlabs.io/api/users/${userId}`);
+exports.getUser = getUser;
+
+/**
+ * Gets Group Profile for the given Group Id
+ * @param token {String} Orion Authentication Token
+ * @param groupId {String} Orion Group Id
+ * @returns {Promise<Object>} Orion Group Profile
+ */
+const getGroup = (token, groupId) =>
+  callOrion(token, `https://api.orionlabs.io/api/groups/${groupId}`);
+exports.getGroup = getGroup;
+
+/**
+ * Gets the media base URL for the current user.
+ * @param token {String} Orion Auth Token.
+ * @returns {Promise<String>} Media Base URL
+ */
+const getMediaBase = () =>
+  callOrion('PLAT-230', 'https://api.orionlabs.io/admin/mediabase').then((res) => res.mediabase);
+
+/**
+ * Transmits multimedia to a given Orion group.
+ * @param token {String} Orion Authentication Token
+ * @param groupId {String} Orion Group to transmit to
+ * @param event {Object} Event to transmit
+ * @returns {Promise<Object>} Return status and body, if any.
+ */
+const postMultimediaEvent = (token, groupId, event) =>
+  callOrion(token, `https://api.orionlabs.io/multimedia/${groupId}`, 'POST', 204, event);
+
+/**
+ * POSTs a PTT Event to the Orion API.
+ * @param token {String} Auth Token
+ * @param groupId {String} Group to which to POST PTT Event
+ * @param event {Object} PTT Event Object
+ * @returns {Promise<unknown>} Response from server.
+ */
+const postPttEvent = (token, groupId, event) =>
+  callOrion(token, `https://api.orionlabs.io/ptt/${groupId}`, 'POST', 204, {
+    media: event.ptt_event.media,
+    ts: event.ptt_event.ts,
+  });
+
+/**
+ * Sends a PTT Voice message to a group.
+ * @param token {String} Orion Authentication Token
+ * @param media {Uint8Array} Media to transmit
+ * @param groupId {String} Group to transmit to
+ * @param streamKey {String} If present, indicates message is encrypted w/ key
+ * @returns {Promise<Object>} Return status and body, if any.
+ */
+const sendPtt = (token, media, groupId, target = null, streamKey = '') => {
   return new Promise((resolve, reject) => {
-    const url = 'https://alnilam.orionlabs.io/api/ticket';
-    axios({
-      method: 'GET',
-      url: url,
-      headers: { Authorization: token },
-    }).then((response) => {
-      if (response.status == 200) {
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
+    getMediaBase()
+      .then((mediabase) => {
+        const mediaURL = `${mediabase}${uuid.v4()}.ov`;
+        utils
+          .putMedia(mediaURL, media)
+          .then(() => {
+            let event = {
+              event_type: 'ptt',
+              ptt_event: {
+                media: mediaURL,
+                mime_type: 'audio/vnd.orion.opus',
+                ts: new Date() / 1000, // {float} Client-side timestamp
+              },
+            };
+
+            if (target) {
+              event.ptt_event.target_user_id = target;
+            }
+
+            if (streamKey) {
+              event.ptt_event.stream_key = streamKey;
+            }
+
+            // TODO: Switch to sendMultimediaEvent when Android bug is fixed.
+            postPttEvent(token, groupId, event)
+              .then((response) => resolve(response))
+              .catch((reason) => reject(reason));
+          })
+          .catch((reason) => reject(reason));
+      })
+      .catch((reason) => reject(reason));
   });
 };
-exports.getAlmilamTicket = getAlmilamTicket;
+exports.sendPtt = sendPtt;
+
+/**
+ * Sends a Text Multimedia message to a group.
+ * @param token {String} Orion Authentication Token
+ * @param message {String} Message to transmit
+ * @param groupId {String} Group to transmit to
+ * @param streamKey {String} If present, indicates message is encrypted w/ key
+ * @returns {Promise<Object>} Return status and body, if any.
+ */
+const sendText = (token, message, groupId, target = null, streamKey = '') => {
+  return new Promise((resolve, reject) => {
+    getMediaBase()
+      .then((mediabase) => {
+        const mediaURL = `${mediabase}${uuid.v4()}.txt`;
+        if (!streamKey && typeof message === 'string' && !message.startsWith('Vt11')) {
+          message = 'Vt11' + message;
+        }
+        utils
+          .putMedia(mediaURL, message)
+          .then(() => {
+            let event = {
+              event_type: 'text',
+              text_event: {
+                media: mediaURL,
+                char_set: 'utf-8',
+                mime_type: 'text/plain',
+                ts: new Date() / 1000, // {float} Client-side timestamp
+              },
+            };
+
+            if (target) {
+              event.text_event.target_user_id = target;
+            }
+
+            if (streamKey) {
+              event.text_event.stream_key = streamKey;
+            }
+
+            postMultimediaEvent(token, groupId, event)
+              .then((response) => resolve(response))
+              .catch((reason) => reject(reason));
+          })
+          .catch((reason) => reject(reason));
+      })
+      .catch((reason) => reject(reason));
+  });
+};
+exports.sendText = sendText;
+
+/**
+ * Sends a Multimedia Image Message to a group.
+ * @param token {String} Orion Authentication Token
+ * @param media {Uint8Array} Image to transmit
+ * @param groupId {String} Group to transmit to
+ * @param streamKey {String} If present, indicates message is encrypted w/ key
+ * @returns {Promise<Object>} Return status and body, if any.
+ */
+const sendImage = (
+  token,
+  media,
+  groupId,
+  target = null,
+  streamKey = '',
+  mimeType = 'image/png',
+) => {
+  // Generate a pseudo-random file name:
+  const fileName = `${uuid.v4()}.${mimeType.split('/').pop()}`;
+
+  return new Promise((resolve, reject) => {
+    getMediaBase()
+      .then((response) => {
+        const mediaURL = response + fileName;
+        utils
+          .putMedia(mediaURL, media)
+          .then(() => {
+            let event = {
+              event_type: 'image',
+              image_event: {
+                media: mediaURL,
+                mime_type: mimeType,
+                friendly_filename: fileName,
+                ts: new Date() / 1000, // {float} Client-side timestamp
+              },
+            };
+
+            if (target) {
+              event.image_event.target_user_id = target;
+            }
+
+            if (streamKey) {
+              event.image_event.stream_key = streamKey;
+            }
+
+            postMultimediaEvent(token, groupId, event)
+              .then((response) => resolve(response))
+              .catch((reason) => reject(reason));
+          })
+          .catch((reason) => reject(reason));
+      })
+      .catch((reason) => reject(reason));
+  });
+};
+exports.sendImage = sendImage;
 
 /**
  * Connects to the Orion Event Stream Websocket
@@ -227,321 +389,22 @@ const connectToWebsocket = (token) => {
 exports.connectToWebsocket = connectToWebsocket;
 
 /**
- * Respond to an Orion Event Stream keepalive 'Ping'
- * @param token {String} Orion Authentication Token
- * @returns {Promise<Object>} Updated Stream Configuration
+ * Uploads a media file to the server-specified Media Base.
+ * @param fileName {String} Path to filename to read & upload
+ * @returns {Promise<String>} URL to uploaded media
  */
-const pong = (token) => {
+const uploadMedia = (fileName) => {
   return new Promise((resolve, reject) => {
-    axios({
-      url: 'https://api.orionlabs.io/api/pong',
-      method: 'POST',
-      headers: { Authorization: token },
-    })
-      .then((response) => {
-        if (response.status === 200) {
-          resolve(response.data);
-        } else {
-          const errorMsg = `status=${response.status} ` + `statusText=${response.statusText}`;
-          reject(new Error(errorMsg));
-        }
+    getMediaBase()
+      .then((mediabase) => {
+        const mediaURL = mediabase + uuid.v4();
+        const media = new Uint8Array(fs.readFileSync(fileName));
+        utils
+          .putMedia(mediaURL, media)
+          .then(() => resolve(mediaURL))
+          .catch((reason) => reject(reason));
       })
-      .catch((response) => {
-        reject(response);
-      });
-  });
-};
-exports.pong = pong;
-
-/**
- * Gets User Status for the given User Id
- * @param token {String} Orion Authentication Token
- * @param userId {String} Orion User Id
- * @returns {Promise<Object>} Orion User Profile
- */
-const getUserStatus = (token, userId) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'GET',
-      url: `https://api.orionlabs.io/api/users/${userId}/status`,
-      headers: { Authorization: token },
-    }).then((response) => {
-      if (response.status === 200) {
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
-  });
-};
-exports.getUserStatus = getUserStatus;
-
-/**
- * Gets User Profile for the given User Id
- * @param token {String} Orion Authentication Token
- * @param userId {String} Orion User Id
- * @returns {Promise<Object>} User Profile
- */
-const getUser = (token, userId) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'GET',
-      url: `https://api.orionlabs.io/api/users/${userId}`,
-      headers: { Authorization: token },
-    }).then((response) => {
-      if (response.status === 200) {
-        resolve(response.data);
-      } else {
-        reject(response);
-      }
-    });
-  });
-};
-exports.getUser = getUser;
-
-/**
- * Gets Group Profile for the given Group Id
- * @param token {String} Orion Authentication Token
- * @param groupId {String} Orion Group Id
- * @returns {Promise<Object>} Orion Group Profile
- */
-const getGroup = (token, groupId) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'GET',
-      url: `https://api.orionlabs.io/api/groups/${groupId}`,
-      headers: { Authorization: token },
-    })
-      .then((response) => {
-        if (response.status === 200) {
-          resolve(response.data);
-        } else {
-          reject(response.data);
-        }
-      })
-      .catch((response) => reject(response.response.data));
-  });
-};
-exports.getGroup = getGroup;
-
-/**
- * Gets the media base URL for the current user.
- * @param token {String} Orion Auth Token.
- * @returns {Promise<String>} Media Base URL
- */
-const getMediaBase = (token) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'GET',
-      url: 'https://api.orionlabs.io/admin/mediabase',
-      headers: { Authorization: token },
-    })
-      .then((response) => {
-        if (response.status === 200) {
-          resolve(response.data.mediabase);
-        } else {
-          reject(response.data);
-        }
-      })
-      .catch((reason) => {
-        reject(reason);
-      });
-  });
-};
-exports.getMediaBase = getMediaBase;
-
-/**
- * PUTs (Uploads) Media to the given URL.
- * @param url {String} Media URL to upload to.
- * @param content {String|Array} Media content to PUT.
- * @returns {Promise<Object>} Return status and body, if any.
- */
-const putMedia = (url, content) => {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'PUT',
-      url: url,
-      data: content,
-    })
-      .then((response) => {
-        if (response.status === 200) {
-          resolve(response.data);
-        } else {
-          reject(response.data);
-        }
-      })
-      .catch((reason) => {
-        reject(reason);
-      });
-  });
-};
-exports.putMedia = putMedia;
-
-/**
- * Transmits multimedia to a given Orion group.
- * @param token {String} Orion Authentication Token
- * @param groupId {String} Orion Group to transmit to
- * @param event {Object} Event to transmit
- * @returns {Promise<Object>} Return status and body, if any.
- */
-const sendMultimediaEvent = (token, groupId, event) => {
-  const url = `https://api.orionlabs.io/multimedia/${groupId}`;
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'POST',
-      url: url,
-      headers: { Authorization: token },
-      data: event,
-    })
-      .then((response) => {
-        if (response.status === 204) {
-          resolve(response.data);
-        } else {
-          reject(response.data);
-        }
-      })
-      .catch((response) => {
-        reject(response);
-      });
-  });
-};
-exports.sendMultimediaEvent = sendMultimediaEvent;
-
-/**
- * Sends a Text Multimedia message to a group.
- * @param token {String} Orion Authentication Token
- * @param message {String} Message to transmit
- * @param groupId {String} Group to transmit to
- * @param streamKey {String} If present, indicates message is encrypted w/ key
- * @returns {Promise<Object>} Return status and body, if any.
- */
-const sendTextMessage = (token, message, groupId, target = null, streamKey = '') => {
-  // Generate a pseudo random file name, doesn't really matter:
-  const fileName = uuid.v4() + '.txt';
-
-  return new Promise((resolve, reject) => {
-    getMediaBase(token)
-      .then((response) => {
-        const mediaURL = response + fileName;
-        if (!streamKey && typeof message === 'string' && !message.startsWith('Vt11')) {
-          message = 'Vt11' + message;
-        }
-        putMedia(mediaURL, message)
-          .then(() => {
-            let event = {
-              event_type: 'text',
-              text_event: {
-                media: mediaURL,
-                char_set: 'utf-8',
-                mime_type: 'text/plain',
-                ts: new Date() / 1000, // {float} Client-side timestamp
-              },
-            };
-
-            if (target) {
-              event.text_event.target_user_id = target;
-            }
-
-            if (streamKey) {
-              event.text_event.stream_key = streamKey;
-            }
-
-            sendMultimediaEvent(token, groupId, event)
-              .then((response) => {
-                resolve(response);
-              })
-              .catch((reason) => {
-                reject(reason);
-              });
-          })
-          .catch((reason) => {
-            reject(reason);
-          });
-      })
-      .catch((reason) => {
-        reject(reason);
-      });
-  });
-};
-exports.sendTextMessage = sendTextMessage;
-
-const sendPttEvent = (token, groupId, event) => {
-  const url = `https://api.orionlabs.io/ptt/${groupId}`;
-  return new Promise((resolve, reject) => {
-    axios({
-      method: 'POST',
-      url: url,
-      headers: { Authorization: token },
-      data: { media: event.ptt_event.media, ts: event.ptt_event.ts },
-    })
-      .then((response) => {
-        if (response.status === 204) {
-          resolve(response.data);
-        } else {
-          reject(response.data);
-        }
-      })
-      .catch((response) => {
-        reject(response.data);
-      });
-  });
-};
-exports.sendPttEvent = sendPttEvent;
-
-/**
- * Sends a PTT Voice message to a group.
- * @param token {String} Orion Authentication Token
- * @param media {String} Media to transmit
- * @param groupId {String} Group to transmit to
- * @param streamKey {String} If present, indicates message is encrypted w/ key
- * @returns {Promise<Object>} Return status and body, if any.
- */
-const sendPtt = (token, media, groupId, target = null, streamKey = '') => {
-  return new Promise((resolve, reject) => {
-    let event = {
-      event_type: 'ptt',
-      ptt_event: {
-        media: media,
-        mime_type: 'audio/vnd.orion.opus',
-        ts: new Date() / 1000, // {float} Client-side timestamp
-      },
-    };
-
-    if (target) {
-      event.ptt_event.target_user_id = target;
-    }
-
-    if (streamKey) {
-      event.ptt_event.stream_key = streamKey;
-    }
-
-    // TODO: Switch to sendMultimediaEvent when Android bug is fixed.
-    sendPttEvent(token, groupId, event)
-      .then((response) => {
-        resolve(response);
-      })
-      .catch((reason) => {
-        reject(reason);
-      });
-  });
-};
-exports.sendPtt = sendPtt;
-
-const uploadMedia = (token, fileName) => {
-  const randFileName = uuid.v4();
-
-  return new Promise((resolve, reject) => {
-    getMediaBase(token).then((response) => {
-      const mediaURL = response + randFileName;
-      const fileContent = fs.readFileSync(fileName);
-      putMedia(mediaURL, fileContent)
-        .then(() => {
-          resolve(mediaURL);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
+      .catch((reason) => reject(reason));
   });
 };
 exports.uploadMedia = uploadMedia;

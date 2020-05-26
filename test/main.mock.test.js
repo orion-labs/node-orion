@@ -9,26 +9,68 @@
 'use strict';
 
 const axios = require('axios');
+const Swagger = require('swagger-client');
+
 const OrionClient = require('./../src/main');
 
 jest.mock('axios');
+jest.mock('swagger-client');
+
+describe('login', () => {
+  afterEach(() => jest.resetAllMocks());
+
+  it('Should fail because of Network Error', () => {
+    const errorMessage = 'Network Error';
+
+    Swagger.mockImplementationOnce(() => Promise.reject(new Error(errorMessage)));
+
+    return OrionClient.auth('x', 'y').catch((error) => {
+      expect(error).toBeInstanceOf(Object);
+      expect(error.toString()).toContain(errorMessage);
+    });
+  });
+});
 
 describe('logout', () => {
-  it('Logs a User out of Orion', () => {
+  afterEach(() => jest.resetAllMocks());
+
+  it('Should succeed', () => {
     const mockStatus = 200;
     const mockData = {};
     const mockSessionId = '123';
 
     axios.mockResolvedValue({ status: mockStatus, data: mockData });
 
-    return OrionClient.logout(mockSessionId).then((resolve) => {
+    return OrionClient.logout('xxx', mockSessionId).then((resolve) => {
       expect(resolve).toBeDefined();
       expect(resolve).toEqual(mockData);
+    });
+  });
+
+  it('Should fail', () => {
+    const mockStatus = 400;
+    const mockSessionId = '123';
+
+    axios.mockRejectedValue({ status: mockStatus });
+
+    return OrionClient.logout('zzz', mockSessionId).catch((reason) => {
+      console.log('reason=', reason);
+      expect(reason).toBeDefined();
     });
   });
 });
 
 describe('whoami', () => {
+  afterEach(() => jest.resetAllMocks());
+
+  it('Should fail', () => {
+    const mockStatus = 400;
+    axios.mockRejectedValue({ status: mockStatus });
+    return OrionClient.whoami().catch((reason) => {
+      expect(reason).toBeDefined();
+    });
+  });
+
   it("Gets an Orion User's Profile information", () => {
     const mockStatus = 200;
     const mockData = {

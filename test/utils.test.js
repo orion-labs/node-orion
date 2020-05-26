@@ -17,10 +17,19 @@ describe('wav2ov', () => {
     const inputFile = fs.readFileSync('test/test.wav');
     const event = { payload: inputFile };
 
-    return OrionClient.utils.wav2ov(event).then((resolve) => {
-      expect(resolve).toBeDefined();
-      expect(resolve.media).toBeDefined();
-      expect(resolve.payload.type).toEqual('Buffer');
+    return OrionClient.utils.wav2ov(event).then((res) => {
+      expect(res).toBeDefined();
+      expect(res.media).toBeDefined();
+      expect(res.payload.type).toEqual('Buffer');
+    });
+  });
+  it('Should encode WAV/PCM Audio to Orion Opus Audio (OV) return buffer', () => {
+    const inputFile = fs.readFileSync('test/test.wav');
+    const event = { payload: inputFile, return_type: 'buffer' };
+
+    return OrionClient.utils.wav2ov(event).then((res) => {
+      expect(res).toBeDefined();
+      expect(res.media).toBeDefined();
     });
   });
 });
@@ -71,14 +80,15 @@ describe('ov2wav', () => {
   });
 });
 
-describe('downloadMedia', () => {
+describe('getMedia', () => {
   it('Should download media', () => {
     const url = 'https://orion-agro.herokuapp.com/sine.ov?frequency=2600&seconds=1';
-    return OrionClient.utils.downloadMedia(url).then((result) => {
-      console.log(result);
+    return OrionClient.utils.getMedia(url).then((res) => {
+      console.log(res);
     });
   });
 });
+
 /*
 Need media to be generated:
 describe('translate', () => {

@@ -8,6 +8,7 @@
 
 'use strict';
 
+const fs = require('fs');
 const OrionClient = require('./../src/main');
 
 let OrionCrypto = false;
@@ -34,11 +35,32 @@ describe('auth', () => {
     });
   });
 
-  it('Should fail to login', () => {
+  it('Should fail', () => {
     return OrionClient.auth('bad-username', 'bad-password').catch((error) => {
       expect(error).toBeInstanceOf(Object);
-      // Should be 401, but if we run the test too many times we'll get 429.
-      expect(error.id).toBeGreaterThan(400);
+    });
+  });
+});
+
+describe('logout', () => {
+  it('Should Log Out of a given Session ID', () => {
+    const username = process.env.TEST_ORION_USERNAME;
+    const password = process.env.TEST_ORION_PASSWORD;
+
+    return OrionClient.auth(username, password).then((res) => {
+      expect(res).toBeDefined();
+
+      const token = res.token;
+      const userId = res.id;
+      const sessionId = res.sessionId;
+
+      expect(token).toBeDefined();
+      expect(userId).toBeDefined();
+      expect(sessionId).toBeDefined();
+
+      return OrionClient.logout(token, sessionId).then((res) => {
+        expect(res).toBeDefined();
+      });
     });
   });
 });
@@ -48,18 +70,18 @@ describe('whoami', () => {
     const username = process.env.TEST_ORION_USERNAME;
     const password = process.env.TEST_ORION_PASSWORD;
 
-    return OrionClient.auth(username, password).then((resolve) => {
-      expect(resolve).toBeDefined();
+    return OrionClient.auth(username, password).then((res) => {
+      expect(res).toBeDefined();
 
-      const token = resolve.token;
-      const userId = resolve.id;
+      const token = res.token;
+      const userId = res.id;
 
       expect(token).toBeDefined();
       expect(userId).toBeDefined();
 
-      return OrionClient.whoami(token).then((resolve) => {
-        expect(resolve).toBeDefined();
-        expect(resolve.id).toBeDefined();
+      return OrionClient.whoami(token).then((res) => {
+        expect(res).toBeDefined();
+        expect(res.id).toBeDefined();
       });
     });
   });
@@ -115,7 +137,7 @@ describe('engage', () => {
     });
   });
 
-  it('Should not Engage with an Orion Group', () => {
+  it('Should fail', () => {
     const username = process.env.TEST_ORION_USERNAME;
     const password = process.env.TEST_ORION_PASSWORD;
 
@@ -130,7 +152,6 @@ describe('engage', () => {
 
       return OrionClient.engage(token, 'bad-group').catch((error) => {
         expect(error).toBeInstanceOf(Object);
-        expect(error.id).toEqual(404);
       });
     });
   });
@@ -228,7 +249,7 @@ describe('getGroup', () => {
     });
   });
 
-  it('Should not get Group Profile', () => {
+  it('Should fail', () => {
     const username = process.env.TEST_ORION_USERNAME;
     const password = process.env.TEST_ORION_PASSWORD;
 
@@ -240,30 +261,70 @@ describe('getGroup', () => {
 
       expect(token).toBeDefined();
 
-      return OrionClient.getGroup(token, 'bad-group').catch((response) => {
-        expect(response).toBeInstanceOf(Object);
-        expect(response.id).toEqual(404);
+      return OrionClient.getGroup(token, 'bad-group').catch((reason) => {
+        expect(reason).toBeInstanceOf(Object);
       });
     });
   });
 });
 
-describe('sendTextMessage', () => {
+describe('sendText', () => {
+  const username = process.env.TEST_ORION_USERNAME;
+  const password = process.env.TEST_ORION_PASSWORD;
+  const groups = process.env.TEST_ORION_GROUPS;
+  const message = "Hello from node-orion's sendText unit test!";
+
   it('Should send a text message to a group', () => {
-    const username = process.env.TEST_ORION_USERNAME;
-    const password = process.env.TEST_ORION_PASSWORD;
-    const groups = process.env.TEST_ORION_GROUPS;
+    return OrionClient.auth(username, password).then(({ token }) => {
+      return OrionClient.sendText(token, message, groups).then((res) => {
+        expect(res).toBeDefined();
+      });
+    });
+  });
 
-    return OrionClient.auth(username, password).then((resolve) => {
-      expect(resolve).toBeInstanceOf(Object);
-      expect(resolve).toBeDefined();
+  it('Should send a text message to a target user', () => {
+    return OrionClient.auth(username, password).then(({ token, id }) => {
+      return OrionClient.sendText(token, message, groups, id).then((res) => {
+        expect(res).toBeDefined();
+      });
+    });
+  });
 
-      const token = resolve.token;
+  if (OrionCrypto) {
+    it('Should send an encrypted text message to a group', () => {
+      return OrionClient.auth(username, password).then(({ token }) => {
+        const streamKey = OrionCrypto.utils.generateStreamKey();
+        let cipherMessage = OrionCrypto.encryptText(streamKey, message);
+        return OrionClient.sendText(token, cipherMessage, groups, null, streamKey).then(
+          (response) => {
+            expect(response).toBeDefined();
+          },
+        );
+      });
+    });
+  }
+});
 
-      expect(token).toBeDefined();
+describe('sendImage', () => {
+  const imageFile = new Uint8Array(fs.readFileSync('test/test_input_image.png'));
+  const username = process.env.TEST_ORION_USERNAME;
+  const password = process.env.TEST_ORION_PASSWORD;
+  const groups = process.env.TEST_ORION_GROUPS;
 
-      const message = 'Hello from a unit test!';
-      return OrionClient.sendTextMessage(token, message, groups).then((response) => {
+  it('Should send an image to a group', () => {
+    return OrionClient.auth(username, password).then(({ token }) => {
+      const imageFile = new Uint8Array(fs.readFileSync('test/test_input_image.png'));
+      return OrionClient.sendImage(token, imageFile, groups).then((response) => {
+        console.log(response);
+        expect(response).toBeDefined();
+      });
+    });
+  });
+
+  it('Should send an image to a target user', () => {
+    return OrionClient.auth(username, password).then(({ token, id }) => {
+      const imageFile = new Uint8Array(fs.readFileSync('test/test_input_image.png'));
+      return OrionClient.sendImage(token, imageFile, groups, id).then((response) => {
         console.log(response);
         expect(response).toBeDefined();
       });
@@ -271,99 +332,14 @@ describe('sendTextMessage', () => {
   });
 
   if (OrionCrypto) {
-    it('Should send an encrypted text message to a group', () => {
-      const username = process.env.TEST_ORION_USERNAME;
-      const password = process.env.TEST_ORION_PASSWORD;
-      const groups = process.env.TEST_ORION_GROUPS;
-
-      return OrionClient.auth(username, password).then((resolve) => {
-        expect(resolve).toBeInstanceOf(Object);
-        expect(resolve).toBeDefined();
-
-        const token = resolve.token;
-
-        expect(token).toBeDefined();
-
-        let message = 'Hello from a unit test!';
-
-        let streamKey;
-        if (OrionCrypto) {
-          streamKey = OrionCrypto.utils.generateStreamKey();
-          message = OrionCrypto.encryptText(streamKey, message);
-        }
-
-        return OrionClient.sendTextMessage(token, message, groups, streamKey).then((response) => {
-          console.log(response);
-          expect(response).toBeDefined();
+    it('Should send an encrypted image to a group', () => {
+      return OrionClient.auth(username, password).then(({ token }) => {
+        let streamKey = OrionCrypto.utils.generateStreamKey();
+        const cipherImage = OrionCrypto.encryptImage(streamKey, imageFile);
+        return OrionClient.sendImage(token, cipherImage, groups, null, streamKey).then((res) => {
+          expect(res).toBeDefined();
         });
       });
     });
   }
-});
-
-describe('uploadMedia', () => {
-  it('Should upload media to Orion', () => {
-    const fileName = 'test/test.ov';
-    const username = process.env.TEST_ORION_USERNAME;
-    const password = process.env.TEST_ORION_PASSWORD;
-
-    return OrionClient.auth(username, password).then((resolve) => {
-      expect(resolve).toBeInstanceOf(Object);
-      expect(resolve).toBeDefined();
-      const token = resolve.token;
-      expect(token).toBeDefined();
-
-      return OrionClient.uploadMedia(token, fileName).then((response) => {
-        expect(response).toBeDefined();
-        expect(response).toContain('https://alnitak.orionlabs.io');
-      });
-    });
-  });
-});
-
-describe('sendPtt', () => {
-  it('Should send a PTT Voice message to a group', () => {
-    const username = process.env.TEST_ORION_USERNAME;
-    const password = process.env.TEST_ORION_PASSWORD;
-    const groups = process.env.TEST_ORION_GROUPS;
-    const fileName = 'test/test.ov';
-
-    return OrionClient.auth(username, password).then((resolve) => {
-      expect(resolve).toBeInstanceOf(Object);
-      expect(resolve).toBeDefined();
-      const token = resolve.token;
-      expect(token).toBeDefined();
-
-      return OrionClient.uploadMedia(token, fileName).then((response) => {
-        const media = response;
-        return OrionClient.sendPtt(token, media, groups).then((response) => {
-          expect(response).toBeDefined();
-        });
-      });
-    });
-  });
-
-  it('Should send a PTT Voice message to a targeted user', () => {
-    const username = process.env.TEST_ORION_USERNAME;
-    const password = process.env.TEST_ORION_PASSWORD;
-    const groups = process.env.TEST_ORION_GROUPS;
-    const fileName = 'test/test.ov';
-
-    return OrionClient.auth(username, password).then((resolve) => {
-      expect(resolve).toBeInstanceOf(Object);
-      expect(resolve).toBeDefined();
-      const token = resolve.token;
-      const userId = resolve.id;
-      expect(token).toBeDefined();
-      expect(userId).toBeDefined();
-
-      return OrionClient.uploadMedia(token, fileName).then((response) => {
-        const media = response;
-        return OrionClient.sendPtt(token, media, groups, userId).then((response) => {
-          console.log(response);
-          expect(response).toBeDefined();
-        });
-      });
-    });
-  });
 });
