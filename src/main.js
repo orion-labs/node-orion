@@ -156,7 +156,7 @@ exports.getAlmilamTicket = getAlmilamTicket;
  * @param token {String} Orion Authentication Token
  * @returns {Promise<Object>} Updated Stream Configuration
  */
-const pong = (token) => callOrion(token, 'https://api.orionlabs.io/api/pong');
+const pong = (token) => callOrion(token, 'https://api.orionlabs.io/api/pong', 'POST');
 exports.pong = pong;
 
 /**
