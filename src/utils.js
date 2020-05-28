@@ -126,7 +126,7 @@ exports.wav2ov = (event) => {
  * @param url {String} URL from which to GET media
  * @returns {Promise<unknown>}
  */
-const getMedia = (url) => {
+const getMedia = (url, how = 'file') => {
   return new Promise((resolve, reject) => {
     axios({
       method: 'GET',
@@ -135,15 +135,19 @@ const getMedia = (url) => {
       validateStatus: (status) => status == 200,
     })
       .then((response) => {
-        const tmpobj = tmp.fileSync();
-        const writer = fs.createWriteStream(tmpobj.name);
-        response.data.pipe(writer);
-        writer.on('finish', () => {
-          resolve(tmpobj.name);
-        });
-        writer.on('error', () => {
-          reject(response.data);
-        });
+        if (how === 'file') {
+          const tmpobj = tmp.fileSync();
+          const writer = fs.createWriteStream(tmpobj.name);
+          response.data.pipe(writer);
+          writer.on('finish', () => {
+            resolve(tmpobj.name);
+          });
+          writer.on('error', () => {
+            reject(response.data);
+          });
+        } else if (how === 'buffer') {
+          resolve(response.data);
+        }
       })
       .catch((reason) => reject(reason));
   });

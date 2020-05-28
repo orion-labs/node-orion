@@ -9,6 +9,7 @@
 'use strict';
 
 const fs = require('fs');
+const http = require('http');
 
 const OrionClient = require('./../src/main');
 
@@ -81,10 +82,17 @@ describe('ov2wav', () => {
 });
 
 describe('getMedia', () => {
-  it('Should download media', () => {
+  it('Should download media as tmp file (default)', () => {
     const url = 'https://orion-agro.herokuapp.com/sine.ov?frequency=2600&seconds=1';
-    return OrionClient.utils.getMedia(url).then((res) => {
-      console.log(res);
+    return OrionClient.utils.getMedia(url).then((media) => {
+      expect(fs.existsSync(media)).toBeTruthy();
+    });
+  });
+
+  it('Should download media as buffer', () => {
+    const url = 'https://orion-agro.herokuapp.com/sine.ov?frequency=2600&seconds=1';
+    return OrionClient.utils.getMedia(url, 'buffer').then((media) => {
+      expect(media).toBeInstanceOf(http.IncomingMessage);
     });
   });
 });
