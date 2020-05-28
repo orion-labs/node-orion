@@ -9,6 +9,7 @@
 'use strict';
 
 const fs = require('fs');
+const imageThumbnail = require('image-thumbnail');
 const OrionClient = require('./../src/main');
 
 let OrionCrypto = false;
@@ -306,7 +307,7 @@ describe('sendText', () => {
 });
 
 describe('sendImage', () => {
-  const imageFile = new Uint8Array(fs.readFileSync('test/test_input_image.png'));
+  const imageFile = Buffer.from(fs.readFileSync('test/test_input_image.png'));
   const username = process.env.TEST_ORION_USERNAME;
   const password = process.env.TEST_ORION_PASSWORD;
   const groups = process.env.TEST_ORION_GROUPS;
@@ -338,6 +339,27 @@ describe('sendImage', () => {
         const cipherImage = OrionCrypto.encryptImage(streamKey, imageFile);
         return OrionClient.sendImage(token, cipherImage, groups, null, streamKey).then((res) => {
           expect(res).toBeDefined();
+        });
+      });
+    });
+
+    it('Should send an encrypted image to a group with thumb', () => {
+      return OrionClient.auth(username, password).then(({ token }) => {
+        let streamKey = OrionCrypto.utils.generateStreamKey();
+        const cipherImage = OrionCrypto.encryptImage(streamKey, imageFile);
+        return imageThumbnail(imageFile, { percentage: 20 }).then((thumbMedia) => {
+          thumbMedia = OrionCrypto.encryptImage(streamKey, thumbMedia);
+          return OrionClient.sendImage(
+            token,
+            cipherImage,
+            groups,
+            null,
+            streamKey,
+            'image/png',
+            thumbMedia,
+          ).then((res) => {
+            expect(res).toBeDefined();
+          });
         });
       });
     });

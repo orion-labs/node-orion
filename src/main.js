@@ -327,38 +327,56 @@ const sendImage = (
   target = null,
   streamKey = '',
   mimeType = 'image/png',
+  thumbMedia = '',
 ) => {
   // Generate a pseudo-random file name:
-  const fileName = `${uuid.v4()}.${mimeType.split('/').pop()}`;
+  const fileId = uuid.v4();
+  const fileExt = mimeType.split('/').pop();
+  const fileName = [fileId, fileExt].join('.');
+  const thumbFileName = [fileId + '_thumb', fileExt].join('.');
 
   return new Promise((resolve, reject) => {
     getMediaBase()
-      .then((response) => {
-        const mediaURL = response + fileName;
+      .then((mediabase) => {
+        const mediaURL = mediabase + fileName;
+        const thumbURL = mediabase + thumbFileName;
+
         utils
           .putMedia(mediaURL, media)
           .then(() => {
-            let event = {
-              event_type: 'image',
-              image_event: {
-                media: mediaURL,
-                mime_type: mimeType,
-                friendly_filename: fileName,
-                ts: new Date() / 1000, // {float} Client-side timestamp
-              },
-            };
+            new Promise((resolve) => {
+              if (thumbMedia) {
+                utils.putMedia(thumbURL, thumbMedia, mimeType).then(() => resolve());
+              } else {
+                resolve();
+              }
+            }).then(() => {
+              let event = {
+                event_type: 'image',
+                image_event: {
+                  media: mediaURL,
+                  mime_type: mimeType,
+                  friendly_filename: fileName,
+                  ts: new Date() / 1000, // {float} Client-side timestamp
+                },
+              };
 
-            if (target) {
-              event.image_event.target_user_id = target;
-            }
+              if (target) {
+                event.image_event.target_user_id = target;
+              }
 
-            if (streamKey) {
-              event.image_event.stream_key = streamKey;
-            }
+              if (streamKey) {
+                event.image_event.stream_key = streamKey;
+              }
 
-            postMultimediaEvent(token, groupId, event)
-              .then((response) => resolve(response))
-              .catch((reason) => reject(reason));
+              if (thumbMedia) {
+                event.image_event.thumbnail_url = thumbURL;
+              }
+
+              postMultimediaEvent(token, groupId, event)
+                .then((response) => resolve(response))
+                .catch((reason) => reject(reason));
+            });
           })
           .catch((reason) => reject(reason));
       })

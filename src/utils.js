@@ -156,13 +156,14 @@ exports.getMedia = getMedia;
  * @param data {Uint8Array} Data to PUT
  * @returns {Promise<Object>} Returns response
  */
-const putMedia = (url, data) => {
+const putMedia = (url, data, mimeType = '') => {
   return new Promise((resolve, reject) => {
     axios({
       method: 'PUT',
       url: url,
       data: data,
       validateStatus: (status) => status == 200,
+      headers: { 'Content-Type': mimeType ? mimeType : 'application/x-www-form-urlencoded' },
     })
       .then((response) => resolve(response.data))
       .catch((reason) => reject(reason));
