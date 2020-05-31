@@ -9,7 +9,6 @@
 'use strict';
 
 const fs = require('fs');
-const http = require('http');
 
 const OrionClient = require('./../src/main');
 
@@ -92,7 +91,7 @@ describe('getMedia', () => {
   it('Should download media as buffer', () => {
     const url = 'https://orion-agro.herokuapp.com/sine.ov?frequency=2600&seconds=1';
     return OrionClient.utils.getMedia(url, 'buffer').then((media) => {
-      expect(media).toBeInstanceOf(http.IncomingMessage);
+      expect(media).toBeInstanceOf(Buffer);
     });
   });
 });

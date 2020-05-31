@@ -131,7 +131,7 @@ const getMedia = (url, how = 'file') => {
     axios({
       method: 'GET',
       url: url,
-      responseType: 'stream',
+      responseType: how === 'file' ? 'stream' : 'arraybuffer',
       validateStatus: (status) => status == 200,
     })
       .then((response) => {
