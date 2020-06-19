@@ -21,15 +21,16 @@ exports.utils = utils;
 /**
  * Wrapper for Axios with pre-built headers for Orion API calls.
  * @param token {String} API Auth Token to use
- * @param url {String} URL to hit
+ * @param path {String} Path to the REST API Endpoint (e.g. /api/taco)
  * @param method {String} Method to use (default: GET)
  * @param status {Number} HTTP Status to expect (default: 200)
  * @param payload {Object} If defined, pass this as 'data'
  * @returns {Promise<unknown>}
  */
-const callOrion = (token, url, method = 'GET', status = 200, payload = {}) => {
+const callOrion = (token, path, method = 'GET', status = 200, payload = {}) => {
+  let apiUrl = process.env.ORION_API_URL || 'https://api.orionlabs.io';
   let options = {
-    url: url,
+    url: apiUrl + path,
     method: method,
     data: payload,
     headers: { Authorization: token },
@@ -55,8 +56,9 @@ const callOrion = (token, url, method = 'GET', status = 200, payload = {}) => {
  * @returns {Promise<Object>} Authentication object
  */
 const auth = (username, password) => {
+  let apiUrl = process.env.ORION_API_URL || 'https://api.orionlabs.io';
   return new Promise((resolve, reject) => {
-    Swagger('https://api.orionlabs.io/api/swagger.json')
+    Swagger(apiUrl + '/api/swagger.json')
       .then((client) => {
         const authParams = { uid: username, password: password };
         client.apis.auth
@@ -78,7 +80,7 @@ exports.login = auth;
  * @returns {Promise<Object>} Resolves or Rejects successful logout
  */
 const logout = (token, sessionId) =>
-  callOrion(token, `https://api.orionlabs.io/api/logout/${sessionId}`, 'POST', 204);
+  callOrion(token, `/api/logout/${sessionId}`, 'POST', 204);
 
 exports.logout = logout;
 
@@ -87,7 +89,7 @@ exports.logout = logout;
  * @param token {String} Orion Auth Token
  * @returns {Promise<Object>} Resolves to the User's Profile as an Object
  */
-const whoami = (token) => callOrion(token, 'https://api.orionlabs.io/api/whoami');
+const whoami = (token) => callOrion(token, '/api/whoami');
 exports.whoami = whoami;
 
 /**
@@ -99,7 +101,7 @@ exports.whoami = whoami;
 const updateUserStatus = (token, userstatus) => {
   return callOrion(
     token,
-    `https://api.orionlabs.io/api/users/${userstatus.id}/status`,
+    `/api/users/${userstatus.id}/status`,
     'PATCH',
     204,
     userstatus,
@@ -125,7 +127,7 @@ const engage = (token, groups, verbosity = 'active') => {
     destinations: [{ destination: 'EventStream', verbosity: verbosity }],
   };
 
-  return callOrion(token, 'https://api.orionlabs.io/api/engage', 'POST', 200, payload);
+  return callOrion(token, '/api/engage', 'POST', 200, payload);
 };
 exports.engage = engage;
 
@@ -136,7 +138,7 @@ exports.engage = engage;
  */
 const getAllUserGroups = (token) => {
   return whoami(token).then((resolve) => {
-    return callOrion(token, `https://api.orionlabs.io/api/users/${resolve.id}`).then(
+    return callOrion(token, `/api/users/${resolve.id}`).then(
       (res) => res.groups,
     );
   });
@@ -148,7 +150,10 @@ exports.getAllUserGroups = getAllUserGroups;
  * @param token {String} Orion Auth Token
  * @returns {Promise<String>} Web Socket Ticket
  */
-const getAlmilamTicket = (token) => callOrion(token, 'https://alnilam.orionlabs.io/api/ticket');
+const getAlmilamTicket = (token) => {
+  let alnilamURL = process.env.ORION_ALNILAM_URL || 'https://alnilam.orionlabs.io';
+  callOrion(token, alnilamURL + '/api/ticket');
+};
 exports.getAlmilamTicket = getAlmilamTicket;
 
 /**
@@ -156,7 +161,7 @@ exports.getAlmilamTicket = getAlmilamTicket;
  * @param token {String} Orion Authentication Token
  * @returns {Promise<Object>} Updated Stream Configuration
  */
-const pong = (token) => callOrion(token, 'https://api.orionlabs.io/api/pong', 'POST');
+const pong = (token) => callOrion(token, '/api/pong', 'POST');
 exports.pong = pong;
 
 /**
@@ -166,7 +171,7 @@ exports.pong = pong;
  * @returns {Promise<Object>} Orion User Profile
  */
 const getUserStatus = (token, userId) =>
-  callOrion(token, `https://api.orionlabs.io/api/users/${userId}/status`);
+  callOrion(token, `/api/users/${userId}/status`);
 exports.getUserStatus = getUserStatus;
 
 /**
@@ -175,7 +180,7 @@ exports.getUserStatus = getUserStatus;
  * @param userId {String} Orion User Id
  * @returns {Promise<Object>} User Profile
  */
-const getUser = (token, userId) => callOrion(token, `https://api.orionlabs.io/api/users/${userId}`);
+const getUser = (token, userId) => callOrion(token, `/api/users/${userId}`);
 exports.getUser = getUser;
 
 /**
@@ -185,7 +190,7 @@ exports.getUser = getUser;
  * @returns {Promise<Object>} Orion Group Profile
  */
 const getGroup = (token, groupId) =>
-  callOrion(token, `https://api.orionlabs.io/api/groups/${groupId}`);
+  callOrion(token, `/api/groups/${groupId}`);
 exports.getGroup = getGroup;
 
 /**
@@ -194,7 +199,7 @@ exports.getGroup = getGroup;
  * @returns {Promise<String>} Media Base URL
  */
 const getMediaBase = () =>
-  callOrion('PLAT-230', 'https://api.orionlabs.io/admin/mediabase').then((res) => res.mediabase);
+  callOrion('PLAT-230', '/admin/mediabase').then((res) => res.mediabase);
 
 /**
  * Transmits multimedia to a given Orion group.
@@ -204,7 +209,7 @@ const getMediaBase = () =>
  * @returns {Promise<Object>} Return status and body, if any.
  */
 const postMultimediaEvent = (token, groupId, event) =>
-  callOrion(token, `https://api.orionlabs.io/multimedia/${groupId}`, 'POST', 204, event);
+  callOrion(token, `/multimedia/${groupId}`, 'POST', 204, event);
 
 /**
  * POSTs a PTT Event to the Orion API.
@@ -214,7 +219,7 @@ const postMultimediaEvent = (token, groupId, event) =>
  * @returns {Promise<unknown>} Response from server.
  */
 const postPttEvent = (token, groupId, event) =>
-  callOrion(token, `https://api.orionlabs.io/ptt/${groupId}`, 'POST', 204, {
+  callOrion(token, `/ptt/${groupId}`, 'POST', 204, {
     media: event.ptt_event.media,
     ts: event.ptt_event.ts,
   });
@@ -393,10 +398,12 @@ exports.sendImage = sendImage;
 const connectToWebsocket = (token) => {
   return new Promise((resolve) => {
     getAlmilamTicket(token).then((result) => {
-      let tokenId = result.token_id;
-      let wsURL = `wss://alnilam.orionlabs.io/stream/${tokenId}/wss`;
+      let wssURL = process.env.ORION_WSS_URL || 'wss://alnilam.orionlabs.io';
 
-      let wsConnection = new WebSocket(wsURL);
+      let tokenId = result.token_id;
+      let url = wssURL + `/stream/${tokenId}/wss`;
+
+      let wsConnection = new WebSocket(url);
 
       wsConnection.addEventListener('open', () => {
         resolve(wsConnection);

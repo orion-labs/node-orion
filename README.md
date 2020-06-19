@@ -63,6 +63,28 @@ OrionClient.auth(username, password).then((result) => {
 });
 ```
 
+## Alternative Orion Service Instance Support
+
+You'll need to set the following environmental variables to allow this module
+to communicate with an alternative Orion Service Instance:
+
+```
+ORION_API_URL: Default 'https://api.orionlabs.io'
+ORION_ALNILAM_URL: Default 'https://alnilam.orionlabs.io'
+ORION_WSS_URL: Default 'wss://alnilam.orionlabs.io'
+```
+
+The following environmental variables provide services for Encode, Decode,
+Trasnslate & Transcribe Nodes, but are not required for basic functionality.
+
+```
+LYRE_URL: Default 'https://lyre.api.orionaster.com/lyre'
+LOCRIS_OV2WAV: Default 'https://locris.api.orionaster.com/ov2wav'
+LOCRIS_STT: Default 'https://locris.api.orionaster.com/stt'
+LOCRIS_TRANSLATE: Default 'https://locris.api.orionaster.com/translate'
+LOCRIS_WAV2OV: Default 'https://locris.api.orionaster.com/wav2ov'
+```
+
 # Copyright
 
 Copyrigh 2020 Orion Labs, Inc.
