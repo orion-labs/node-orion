@@ -217,6 +217,7 @@ const postPttEvent = (token, groupId, event) =>
   callOrion(token, `https://api.orionlabs.io/ptt/${groupId}`, 'POST', 204, {
     media: event.ptt_event.media,
     ts: event.ptt_event.ts,
+    stream_key: event.ptt_event.stream_key,
   });
 
 /**
